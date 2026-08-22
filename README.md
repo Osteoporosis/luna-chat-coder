@@ -2,7 +2,7 @@
 
 [한국어 README](README.ko.md)
 
-**Version 0.1.1**
+**Version 0.1.2**
 
 > AI agents working from this repository should read [`AGENTS.md`](AGENTS.md) first.
 
@@ -34,7 +34,7 @@ On repository work, the model should quietly:
 3. materialize the exact target commit or PR-head source as a complete sandbox working tree and verify its base identity before editing;
 4. inventory the sandbox before installing or acquiring anything;
 5. perform normal edit/build/test/debug work in the sandbox work container;
-6. use an Actions mission only for a real capability, transport, or execution gap;
+6. use a bounded Actions mission only when supply, exact transport, or genuinely degraded execution makes it useful;
 7. verify executable behavior with the checks required by the repository and task;
 8. publish the exact verified change through the simplest reliable GitHub path;
 9. report only what actually ran, and mention degraded remote execution when it was necessary.
@@ -43,17 +43,17 @@ A healthy task should not make the user operate Luna or watch its internal check
 
 ## When Actions missions are useful
 
-GitHub Actions is a fallback execution boundary, not the default development environment.
+GitHub Actions is a bounded remote mechanism, not the default development environment.
 
-A mission may be useful for three different reasons:
+Three common mission roles are:
 
-- **Supply** — the sandbox can do the engineering work but cannot obtain a required dependency, runtime, SDK, compiler, native library, generated input, or similar external input.
-- **Exact transport** — a deterministic patch/bundle is safer or more efficient than repeated GitHub writes, for example across many files, binary or mode-sensitive changes, connector limits, or persistent API instability.
+- **Supply** — the sandbox can do the engineering work but cannot obtain a required dependency/package set, runtime, SDK, compiler, executable/application distribution, installer, native library, generated input, or similar external input.
+- **Exact transport** — carry exact repository source into the sandbox when direct Git access is unavailable or impractical, or carry a verified change back to GitHub when a byte-preserving archive/patch/bundle is safer or more efficient than repeated content writes.
 - **Degraded remote execution** — the sandbox itself is unavailable or cannot sustain the task because of a hard usage, duration, resource, or execution limit.
 
-Patch transport is a choice, not a last-resort punishment. File operations, native Git object operations, and exact patch/bundle missions are alternative publication mechanisms. Luna chooses the lowest-overhead option that remains exact and reliable for the observed change.
+Transport is bidirectional and is a choice, not a last-resort punishment. Small intentional textual edits may use direct file operations; when exact source or verified changes already exist and reconstruction would add meaningful fidelity or partial-update risk, prefer byte-preserving archives, checksummed artifact payloads, Git objects, patches, or bundles when practical. Luna chooses the lowest-overhead path that remains exact and reliable for the observed payload.
 
-An API or Actions failure must be diagnosed before it is retried. The model should inspect the returned error, failing step, logs, and partial results before editing source or repeating a run. An unchanged retry is appropriate only when the evidence supports a transient or flaky failure; repeated blind retries are specifically discouraged.
+Every mission result, including a reported success, should be checked against the expected output contract before it is relied on. A green run does not by itself prove that the intended artifact, commit, ref, checksum, or source identity is correct. Failures additionally require diagnosis from the returned error, failing step, logs, and partial results before source changes or retries; repeated blind retries are specifically discouraged.
 
 Detailed mission rules live in [`actions-missions.md`](.agents/skills/luna-chat-coder/references/actions-missions.md).
 
@@ -67,7 +67,7 @@ Chat-based development already has a useful execution environment. Luna exists t
 - conversation text preserves intent well but is a poor source of exact bytes;
 - GitHub Actions is remote, metered execution with workflow, startup, artifact, and cleanup overhead.
 
-The policy is therefore **sandbox first, remote only for a real gap**. Inventory what already exists before acquiring more.
+The policy is therefore **sandbox first; use bounded remote help for supply or transport, and move engineering execution remote only when the sandbox itself cannot sustain it**. Inventory what already exists before acquiring more.
 
 The repository defines its own engineering method. Luna does not choose a database, test framework, runtime, or substitute technology merely because it is easier to run. It makes the repository's declared requirements executable as faithfully as practical.
 
@@ -84,9 +84,9 @@ commit / PR head
     > conversation reconstruction
 ```
 
-For publication, choose among connected file operations, native Git blob/tree/commit/ref operations, or an exact patch/bundle mission according to the actual payload and observed integration reliability. A substantial change should be bound to an expected base SHA. If the base moved, recover and deliberately rebase, merge, or recreate the payload.
+For source acquisition and publication, choose among connected repository operations, native Git object operations, or archive/checksummed-artifact/patch/bundle transport according to the actual payload and observed integration reliability. A substantial change should be bound to an expected base SHA. If the base moved, recover and deliberately rebase, merge, or recreate the payload.
 
-Do not recreate a large verified change from prose when exact bytes already exist.
+Do not recreate an exact source tree or verified multi-file/binary payload from prose or model-authored complete-file/blob content when practical byte-preserving transport can carry the existing bytes.
 
 Temporary mission state is task-owned and bounded, but cleanup is recovery-aware. Failed runs, branches, artifacts, or logs should remain while they still have debugging, review, handoff, or recovery value. If conversational context is lost, reconstruct ownership and terminal state from durable GitHub evidence before deleting unfamiliar remote objects.
 
@@ -178,9 +178,9 @@ Luna Chat Coder covers:
 - exact recovery across sandbox or conversational context loss;
 - sandbox-first execution and capability inventory;
 - faithful acquisition of repository-required missing inputs;
-- exact multi-file/binary/history transport when it is the better publication path;
+- exact source/change transport in either direction when it is the better byte-preserving path;
 - bounded GitHub Actions missions and failure diagnosis;
-- degraded remote execution when the sandbox itself is unavailable;
+- degraded remote execution when the sandbox itself is unavailable or cannot sustain the required execution;
 - evidence-based completion reporting;
 - recovery-aware cleanup of temporary mission-owned remote state.
 

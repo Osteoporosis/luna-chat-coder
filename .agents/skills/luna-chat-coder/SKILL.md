@@ -4,7 +4,7 @@ description: Keep repository development reliable from chat by using the sandbox
 license: MIT
 compatibility: Requires access to durable repository state. The fully specified ChatGPT Web path requires both the GitHub Plugin and the ChatGPT Codex Connector GitHub App for the target repository. GitHub Actions access is required only when an Actions mission is needed. Other Agent Skills hosts may use the core policy only to the extent that equivalent capabilities actually exist.
 metadata:
-  version: "0.1.1"
+  version: "0.1.2"
 ---
 
 # Luna Chat Coder
@@ -32,8 +32,8 @@ Do not use `local container`, `local environment`, or `bridge` for these concept
 6. **GitHub holds exact durable truth.** Chat is useful for intent; conversation reconstruction is not a substitute for exact source when durable source exists. Keep observed repository facts distinct from material assumptions.
 7. **Durable handoff is task-owned.** Use a branch, PR, issue, commit, or task-owned artifact when losing state would make recovery expensive or ambiguous; keep cheap intermediate reasoning in chat.
 8. **Assume concurrent actors.** Other chats, agents, CI, or humans may create or move branches, refs, commits, workflows, and artifacts while this task is active. Resolve mutable names to current immutable identity before writes, publication, or cleanup; preserve unfamiliar state and never infer ownership from age or naming alone.
-9. **Choose the simplest reliable exact path.** File writes, native Git object operations, and patch/bundle missions are transport choices, not a rigid hierarchy. Select using exactness, payload shape, file count, round trips, integration limits, and observed reliability.
-10. **Diagnose before retrying.** Inspect returned errors or Actions logs/results before changing source or repeating an operation. Do not guess a root cause from failure status alone.
+9. **Choose the simplest reliable exact path.** File writes, native Git object operations, archives, artifacts, and patch/bundle missions are transport choices, not a rigid hierarchy. Select using exactness, payload shape, round trips, integration limits, and observed reliability. When exact bytes already exist and model-mediated reconstruction would add meaningful serialization or partial-update risk, prefer a byte-preserving path; direct content writes remain appropriate for small intentional textual changes or when no better exact transport exists.
+10. **Verify mission results; diagnose before retrying.** Inspect a mission's returned state and expected outputs before relying on them, even when the run reports success. Diagnose failures from logs/results before changing source or repeating an operation; do not guess a root cause from status alone.
 11. **The user's host computer is outside the workflow.** Do not require direct access to it or ask the user to weaken host isolation merely to unblock ordinary repository development.
 12. **Evidence bounds completion claims.** Report only operations and checks that actually ran against the relevant state.
 
@@ -56,7 +56,7 @@ When the normal path is healthy, do not narrate this preflight to the user.
 
 Treat the sandbox work container as a disposable development workstation. For a repository task, first recover or materialize the exact target commit/PR-head source into a complete working tree there, verify its identity, and only then perform source edits or the engineering loop. A handful of repository API reads is not a substitute for establishing the working tree when the task requires editing, building, testing, or inspecting repository-wide behavior.
 
-When ordinary Git network access is available, clone/fetch and check out the resolved target state. If the sandbox cannot reach GitHub directly but connected repository reads or an exact archive/transport are available, use those to reconstruct the complete target tree without inventing bytes. If no exact source path can establish the required working tree, treat that as a capability/transport gap rather than editing an incomplete reconstruction.
+When ordinary Git network access is available, clone/fetch and check out the resolved target state. If the sandbox cannot reach GitHub directly, use a connected repository path or bounded transport mission to deliver an exact checkout, archive, Git bundle, checksummed artifact payload, or equivalent source payload into the sandbox. When repository size or payload shape makes per-file reconstruction materially riskier or more expensive, prefer that byte-preserving transfer over rebuilding the tree through model-authored file or blob content. The source-transfer step may run remotely; the normal edit/build/test/debug loop should return to or remain in the sandbox. If no exact source path can establish the required working tree, treat that as a transport/capability problem rather than editing an incomplete reconstruction.
 
 When the repository requires a capability that is absent, first try a safe and faithful sandbox setup if the environment permits it. Installation and configuration choices that are purely disposable development details can be resolved autonomously when the requested outcome is clear.
 
@@ -64,27 +64,13 @@ Do not silently weaken verification because setup is inconvenient. If the reposi
 
 ## Use Actions missions when they reduce real risk or cost
 
-An Actions mission is appropriate when at least one of these is true:
+Use a bounded Actions mission when it is a safer or more efficient way to supply or transport exact inputs into the sandbox, carry exact outputs to GitHub, or execute a required step that the sandbox itself cannot sustain. A mission does not imply degraded remote mode.
 
-- the sandbox cannot obtain or execute a repository-required capability;
-- the sandbox itself is unavailable or cannot sustain the task;
-- a substantial exact patch/bundle is safer or more efficient than repeated per-file writes;
-- the connected GitHub write path is constrained by payload/operation limits or is observably unstable after its returned errors have been inspected;
-- binary changes, renames, mode changes, Git history, or another payload property is better preserved as one deterministic transport unit.
+Do not dispatch a mission merely because Actions exists. Missing direct GitHub network access, a missing compiler/SDK/service, or an inability to download required bytes does not by itself justify moving edit/build/test/debug work out of a usable sandbox. First prefer an exact transport or supply path that restores the sandbox engineering loop when that remains faithful and practical. Supply and transport missions may run bounded acquisition, packaging, application, integrity, or output-verification commands needed for their payloads without becoming degraded remote mode while the sandbox remains the primary engineering loop.
 
-Do not dispatch a mission merely because Actions exists. Do not abandon a connected GitHub path after one unexplained failure: inspect the error first. A clearly transient operation may be retried once when safe; repeated or structurally brittle failures are a reason to choose a different exact transport.
+An archive, checksummed artifact payload, patch, or bundle can also be safer than repeated per-file/blob operations when exact source or verified changes already exist and binary/mode/history semantics, connector limits, or model-mediated serialization would add avoidable fidelity risk. Do not abandon a connected GitHub path after one unexplained failure: inspect the error first. A clearly transient operation may be retried once when safe; repeated or structurally brittle failures are a reason to choose a different exact path.
 
-The common capability case is a **supply mission**: a networked runner obtains or prepares a required dependency, runtime, SDK, compiler, native library, generated input, cache, archive, or other external build input and returns a verified artifact. After the missing capability is supplied, return to the sandbox engineering loop.
-
-### Distinguish acquisition gaps from execution gaps
-
-If the sandbox can faithfully execute a required capability once the necessary bytes are available, prefer a supply mission that obtains or prepares those bytes and returns them to the sandbox. Do not move the engineering loop to Actions merely because the sandbox cannot download or initially install a required tool or service.
-
-For example, if the repository requires PostgreSQL and the sandbox can run PostgreSQL but cannot obtain the required packages or distribution, use a supply mission to acquire a compatible PostgreSQL distribution or installation payload, verify it in the sandbox, install and start PostgreSQL there, and continue migrations, application execution, tests, and debugging in the sandbox.
-
-Use remote execution only when the sandbox cannot faithfully execute the required capability even after the necessary inputs have been supplied, or when the sandbox itself cannot sustain the task.
-
-If the sandbox work container itself is unavailable or cannot sustain the task because of platform usage limits, execution-duration limits, resource limits, missing execution capability, or another hard environment constraint, enter **degraded remote mode**. Continue with bounded Actions missions that perform only the necessary editing, build, test, packaging, or verification steps, using GitHub commits/branches/artifacts as durable state between missions.
+Replacing the sandbox repository engineering loop with remote edit/build/test/debug or substantive verification belongs in **degraded remote mode** only when the sandbox work container itself is unavailable or cannot faithfully sustain the required execution after practical exact inputs or capabilities have been supplied. Continue then with bounded missions that perform only the necessary editing, build, test, packaging, or verification steps, using GitHub commits/branches/artifacts as durable state between missions.
 
 Degraded remote mode is a fallback, not the preferred environment. Tell the user in the next meaningful user-visible update or final report that sandbox execution was unavailable or insufficient and that the work continued through GitHub Actions. Do not speculate about billing. If an operation would require an explicitly paid or materially costly resource beyond ordinary configured Actions use, obtain the user's approval before creating that cost.
 
@@ -95,12 +81,12 @@ Read [`references/actions-missions.md`](references/actions-missions.md) before d
 Choose the lowest-overhead path that remains exact and reliable for the observed task:
 
 - connected repository file operations are usually efficient for small textual changes;
-- native Git blob/tree/commit/ref operations can efficiently publish substantial multi-file state when exposed by the integration;
-- an exact patch or bundle carried by an Actions mission can be preferable for large or complex diffs, repeated-write overhead, binary/mode/rename semantics, connector limits, or persistent API instability.
+- native Git object operations are useful when they preserve already-existing exact Git state without unnecessary reserialization;
+- an exact archive, checksummed artifact payload, patch, or bundle can be preferable for larger or structured payloads, repeated-write overhead, binary/mode/rename semantics, connector limits, or persistent API instability.
 
 Capture the expected base SHA before substantial publication work. If the base moved, recover the new durable state and deliberately rebase, merge, or recreate the payload. Do not reconstruct a substantial verified change from prose when exact source bytes can be transported.
 
-Model-mediated reconstruction or serialization of publication payloads can introduce unintended byte-level drift even when the intended source is unchanged. When a published file or object differs from the verified source, consider the publication path itself as a possible cause before assuming the source or overall publication strategy is wrong.
+Model-mediated reconstruction or serialization of publication payloads can introduce unintended byte-level drift even when the intended source is unchanged. Avoid routing an already-verified multi-file, binary, or otherwise structured payload through model-authored complete-file or blob content when a practical byte-preserving transport can carry the existing bytes. When a published file or object differs from the verified source, consider the publication path itself as a possible cause before assuming the source or overall publication strategy is wrong.
 
 If the strategy still appears appropriate, a limited retry of only the failed payload may be reasonable. Preserve the verified source rather than reconstructing it unnecessarily, avoid disturbing outputs that are already known to be correct, and use available integrity evidence to confirm the result when practical. If the failure persists, reassess the transport or report the blocker rather than repeating the same operation blindly.
 

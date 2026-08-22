@@ -2,7 +2,7 @@
 
 [English README](README.md)
 
-**Version 0.1.1**
+**Version 0.1.2**
 
 > 이 리포지토리에서 작업하는 AI agent는 먼저 [`AGENTS.md`](AGENTS.md)를 읽어야 합니다.
 
@@ -34,7 +34,7 @@ Luna Chat Coder는 일반 chat에서 신뢰할 수 있는 software development�
 3. edit 전에 정확한 target commit 또는 PR-head source 전체를 샌드박스 working tree로 materialize하고 base identity를 검증합니다.
 4. 무엇을 설치하거나 가져오기 전에 샌드박스에 이미 있는 capability를 조사합니다.
 5. 일반적인 edit/build/test/debug 작업은 샌드박스 작업 컨테이너에서 수행합니다.
-6. 실제 capability, transport 또는 execution gap이 있을 때만 Actions mission을 사용합니다.
+6. supply, exact transport 또는 실제 degraded execution에 도움이 될 때만 bounded Actions mission을 사용합니다.
 7. 리포지토리와 task가 요구하는 check로 실제 동작을 검증합니다.
 8. 검증된 정확한 변경을 가장 단순하고 신뢰할 수 있는 GitHub 경로로 게시합니다.
 9. 실제로 수행한 것만 보고하고, degraded remote execution이 필요했다면 그 사실을 알립니다.
@@ -43,17 +43,17 @@ Luna Chat Coder는 일반 chat에서 신뢰할 수 있는 software development�
 
 ## Actions mission이 유용한 경우
 
-GitHub Actions는 기본 개발환경이 아니라 fallback execution boundary입니다.
+GitHub Actions는 기본 개발환경이 아니라 bounded remote mechanism입니다.
 
-Mission은 크게 세 가지 이유로 유용할 수 있습니다.
+대표적인 mission role 세 가지는 다음과 같습니다.
 
-- **Supply** — 샌드박스가 engineering 작업 자체는 할 수 있지만 필요한 dependency, 런타임, SDK, compiler, native library, generated input 같은 외부 input을 구할 수 없는 경우.
-- **Exact transport** — 많은 파일, binary 또는 mode-sensitive 변경, connector limit, 지속적인 API 불안정성 등으로 인해 반복적인 GitHub write보다 deterministic patch/bundle이 더 안전하거나 효율적인 경우.
+- **Supply** — 샌드박스가 engineering 작업 자체는 할 수 있지만 필요한 dependency/package set, 런타임, SDK, compiler, executable/application distribution, installer, native library, generated input 같은 외부 input을 구할 수 없는 경우.
+- **Exact transport** — direct Git access가 없거나 비효율적일 때 정확한 repository source를 샌드박스로 가져오거나, 검증된 변경을 GitHub로 되돌릴 때 반복적인 content write보다 byte-preserving archive/patch/bundle이 더 안전하거나 효율적인 경우.
 - **Degraded remote execution** — usage, duration, resource, execution hard limit 때문에 샌드박스 자체를 사용할 수 없거나 task를 지속할 수 없는 경우.
 
-Patch transport는 최후의 벌칙 같은 경로가 아니라 하나의 선택지입니다. File operation, native Git object operation, exact patch/bundle mission은 서로 다른 publication mechanism입니다. Luna는 관찰된 변경에 대해 정확성과 신뢰성을 유지하면서 overhead가 가장 낮은 방법을 선택합니다.
+Transport는 양방향이며 최후의 벌칙 같은 경로가 아니라 하나의 선택지입니다. 작은 의도적 text edit은 direct file operation이 적합할 수 있지만, exact source나 검증된 변경이 이미 존재하고 재구성이 의미 있는 fidelity/partial-update risk를 추가한다면 가능하면 byte-preserving archive, checksummed artifact payload, Git object, patch, bundle을 선호합니다. Luna는 관찰된 payload에 대해 정확성과 신뢰성을 유지하면서 overhead가 가장 낮은 경로를 선택합니다.
 
-API 또는 Actions가 실패하면 retry 전에 원인을 진단해야 합니다. Source를 수정하거나 run을 반복하기 전에 반환된 error, 실패한 step, log, partial result를 확인합니다. 동일한 retry는 evidence가 transient/flaky failure를 가리킬 때에만 적절하며, 근거 없는 반복 실행은 명시적으로 피합니다.
+성공으로 보고된 경우를 포함해 모든 mission result는 의존하기 전에 예상 output contract와 맞는지 확인해야 합니다. Green run 자체만으로 의도한 artifact, commit, ref, checksum 또는 source identity가 정확하다고 증명되지는 않습니다. 실패한 경우에는 source 수정이나 retry 전에 반환된 error, 실패한 step, log, partial result를 추가로 진단하며, 근거 없는 반복 실행은 명시적으로 피합니다.
 
 상세한 mission 규칙은 [`actions-missions.md`](.agents/skills/luna-chat-coder/references/actions-missions.md)에 있습니다.
 
@@ -67,7 +67,7 @@ Chat 기반 development에는 이미 유용한 실행환경이 있습니다. Lun
 - conversation text는 intent를 보존하기에는 좋지만 정확한 source byte의 저장소로는 부적합합니다.
 - GitHub Actions는 workflow, startup, artifact, cleanup overhead가 있는 remote metered execution입니다.
 
-따라서 정책은 **sandbox first, remote only for a real gap**입니다. 새로운 것을 가져오기 전에 이미 있는 capability부터 조사합니다.
+따라서 정책은 **sandbox first; supply/transport에는 bounded remote help를 쓰되 engineering execution 자체는 샌드박스가 지속할 수 없을 때만 remote로 옮긴다**입니다. 새로운 것을 가져오기 전에 이미 있는 capability부터 조사합니다.
 
 Engineering 방법은 Luna가 아니라 리포지토리가 정의합니다. 단지 실행하기 쉽다는 이유로 database, test framework, 런타임 또는 대체 기술을 Luna가 임의로 선택하지 않습니다. 리포지토리가 선언한 요구사항을 가능한 한 충실하게 실행할 수 있도록 돕습니다.
 
@@ -84,9 +84,9 @@ commit / PR head
     > conversation reconstruction
 ```
 
-Publication에서는 실제 payload와 관찰된 integration 신뢰성에 따라 connected file operation, native Git blob/tree/commit/ref operation, exact patch/bundle mission 가운데 선택합니다. 상당한 변경은 예상 base SHA에 묶어야 합니다. Base가 이동했다면 새 state를 복구하고 의도적으로 rebase/merge하거나 payload를 다시 만듭니다.
+Source acquisition과 publication에서는 실제 payload와 관찰된 integration 신뢰성에 따라 connected repository operation, native Git object operation, archive/checksummed-artifact/patch/bundle transport 가운데 선택합니다. 상당한 변경은 예상 base SHA에 묶어야 합니다. Base가 이동했다면 새 state를 복구하고 의도적으로 rebase/merge하거나 payload를 다시 만듭니다.
 
-정확한 byte가 이미 존재하는 큰 검증 변경을 prose에서 다시 만들지 않습니다.
+Practical한 byte-preserving transport로 기존 byte를 운반할 수 있다면 exact source tree나 검증된 multi-file/binary payload를 prose 또는 model-authored complete-file/blob content에서 다시 만들지 않습니다.
 
 Temporary mission state는 task-owned이고 bounded해야 하지만 cleanup은 recovery를 고려해야 합니다. 실패한 run, branch, artifact, log가 debugging, review, handoff, recovery 가치가 있는 동안은 보존합니다. Conversation context가 유실되었다면 낯선 remote object를 삭제하기 전에 durable GitHub evidence에서 ownership과 terminal state를 복원합니다.
 
@@ -178,9 +178,9 @@ Luna Chat Coder가 다루는 범위는 다음과 같습니다.
 - sandbox 또는 conversation context loss 이후 exact recovery
 - sandbox-first execution과 capability inventory
 - 리포지토리가 요구하는 누락 input의 faithful acquisition
-- 더 나은 publication path일 때 exact multi-file/binary/history transport
+- 더 나은 byte-preserving path일 때 양방향 exact source/change transport
 - bounded GitHub Actions mission과 failure diagnosis
-- 샌드박스 자체를 사용할 수 없을 때 degraded remote execution
+- 샌드박스 자체를 사용할 수 없거나 required execution을 지속할 수 없을 때 degraded remote execution
 - evidence-based completion reporting
 - temporary mission-owned remote state의 recovery-aware cleanup
 

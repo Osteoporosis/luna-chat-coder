@@ -141,49 +141,57 @@ The intended behavior is closer to an unmanned probe:
 
 The canonical term is therefore **Actions mission**.
 
-Mission roles may include supply, exact transport, and degraded remote execution, but these are roles of the same mechanism rather than separate infrastructure concepts.
+Mission roles may include supply, exact transport, degraded remote execution, and occasional task-owned remote control such as cleanup, but these are roles of the same mechanism rather than a rigid taxonomy. Transport is intentionally bidirectional: a mission may bring exact source or required bytes into the sandbox, or carry verified bytes back to durable GitHub state, without moving the engineering loop itself out of the sandbox. Commands used inside supply or transport missions to acquire/build/package a payload, apply it, or verify its integrity/output are mission mechanics rather than degraded remote mode so long as Actions is not substituting for the sandbox repository engineering loop.
 
 ## 9. Supply missions
 
 A supply mission is appropriate when the sandbox can perform the engineering work but cannot obtain a required external input.
 
-Examples include a dependency cache, runtime, SDK, compiler, native library, browser payload, generated data, vendor archive, or other repository-required input.
+Examples include a dependency/package cache, runtime, SDK, compiler, executable or application distribution, installer, native library, browser payload, generated data, vendor tree/archive, or other repository-required input.
 
 Important properties:
 
 - acquire only what the task requires;
 - derive versions and requirements from repository declarations where possible;
-- record provenance, repository SHA, platform/architecture, relevant tool versions, and production commands;
+- identify the sandbox target platform/ABI when native compatibility matters;
+- record provenance, repository SHA, sandbox target, runner platform/architecture, relevant tool versions, and production commands;
 - checksum the returned payload;
-- treat native or compiled outputs as platform-specific unless compatibility is established;
+- treat runner-native or compiled outputs as platform-specific unless compatibility with the sandbox target is established;
+- allow project-appropriate caches, package sets, vendor trees, portable install trees, or installers to be materialized and consumed offline in the sandbox without implying they belong in source control, while preserving required filesystem semantics inside the transported payload rather than trusting an outer artifact container to do so;
 - return to the sandbox for the normal engineering loop after supply.
 
 Luna should not turn this into a general-purpose environment-management methodology.
 
-## 10. Exact source transport is a first-class option
+## 10. Exact transport is a first-class, bidirectional option
 
-Patch or bundle transport must not be treated as a punishment used only after every GitHub API mechanism has failed.
+Transport must not be treated only as publication or as a punishment used after every connected GitHub mechanism has failed. A sandbox that cannot reach GitHub directly may still be perfectly capable of editing, building, testing, and debugging once exact source arrives. When repository size or payload shape makes per-file reconstruction materially riskier or more expensive, a bounded mission that exports an exact checkout, archive, Git bundle, or equivalent artifact can therefore be the correct source-acquisition path while leaving the engineering loop in the sandbox.
 
-Connected file operations, native Git object operations, and exact patch/bundle missions are alternative publication transports. The correct choice depends on the observed task.
+The same principle applies in the other direction after verification. Connected file operations, native Git object operations, archives/artifacts, patches, and bundles are alternative transports. The correct choice depends on the observed payload and integration, not on a fixed hierarchy.
 
-A deterministic patch or bundle may be better when:
+A byte-preserving transport is especially attractive when exact bytes already exist and model-mediated serialization adds no semantic value. Re-emitting a large source tree or verified multi-file change through model-authored complete-file/blob content creates extra opportunities for byte drift, partial updates, and round trips. Small intentional textual edits are different: direct file operations can remain the simplest reliable path. Luna should not encode a rigid file-count threshold because payload semantics, connector capabilities, and future model/tool fidelity can change.
 
-- many files change and repeated complete-file writes create excessive round trips;
-- independent writes create partial-update risk;
+The mission definition and the transported bytes are different layers. Putting a substantial patch or source payload into model-authored workflow YAML, heredocs, command literals, or large textual workflow inputs does not become more exact merely because Actions executes it. The fidelity benefit comes from carrying an already-existing exact file/object/artifact reference byte-for-byte and verifying identity at the receiving side. Artifact transport is not assumed to be symmetric: a workflow-produced artifact can be downloaded later, while sandbox-to-runner transfer requires an actual host capability or prior durable state. When that channel does not exist in a given direction, Luna should choose another exact mechanism rather than using the workflow as a text-shaped disguise for model serialization. An artifact wrapper is also not itself a fidelity guarantee: complete source or other filesystem-sensitive payloads should use an inner archive, Git bundle, or equivalent format that preserves hidden paths and required mode/symlink/case semantics, with the inner payload checksummed.
+
+Git patches are a particularly useful example, but the exact boundary is explicit Git object state rather than an ambient working tree. First materialize and verify the intended result as a Git tree or commit, then generate a binary patch between the expected base tree and that result tree with text conversion/external diff helpers disabled. This makes staged-versus-unstaged state irrelevant to the transport itself, includes intended new files once they are deliberately represented in the result tree, and permits the receiving side to verify that patch application recreates the expected result tree. A bare no-argument `git diff --binary` is therefore not the canonical exact-transport recipe. Archives remain natural for complete source snapshots and supply payloads. A partial archive overlay is more situational because deletes, renames, modes, symlinks, and safe path replacement need an explicit contract; it should not displace patch/bundle merely for convenience.
+
+A deterministic archive, patch, or bundle may be better when:
+
+- direct Git/network access is unavailable but the sandbox can otherwise do the work;
+- many files or a large exact payload make repeated complete-file operations inefficient or fragile;
 - binary changes, renames, executable bits, mode changes, or Git object/history semantics matter;
 - the connector has payload or operation limits;
 - API errors persist after the returned errors have been inspected;
 - one checksummed payload makes recovery or handoff materially simpler.
 
-Conversely, a small textual change should not incur a remote mission merely because patch transport exists.
+Conversely, a small textual change should not incur a remote mission merely because exact transport exists.
 
-The choice should minimize overhead while preserving exactness and reliability.
+The choice should minimize overhead while preserving exactness and reliability. For transported payloads, source/base identity, checksums, post-transfer identity checks, and repository-defined verification are important integrity boundaries.
 
-For patches, binary-safe generation, checksum, expected base SHA, `git apply --check`, post-apply diff inspection, and repository-defined verification are important integrity boundaries.
+## 11. Mission results must be verified; failures must be diagnosed
 
-## 11. GitHub/API and Actions failures must be diagnosed
+A mission's reported conclusion is not the whole result. Even a green run can produce the wrong artifact, commit, ref, checksum, source identity, or cleanup effect if the mission contract or workflow is defective. Luna therefore verifies the outputs that matter before consuming a mission result or making the next consequential decision.
 
-A repeated observed failure mode in web-chat development is reacting to a failed remote operation without examining evidence.
+A separate repeated failure mode in web-chat development is reacting to a failed remote operation without examining evidence.
 
 Bad patterns include:
 
@@ -193,7 +201,7 @@ Bad patterns include:
 - losing useful partial artifacts or commits before inspecting them;
 - treating permission, quota, stale SHA, workflow syntax, and product-test failures as the same class of problem.
 
-Luna therefore requires diagnosis before retry or source modification.
+Luna therefore requires output-contract verification for successful missions and diagnosis before retry or source modification for failed missions.
 
 When possible, distinguish:
 
@@ -210,7 +218,7 @@ If logs are unavailable, say so and preserve uncertainty.
 
 ## 12. Degraded remote mode
 
-If the sandbox itself is unavailable or cannot sustain the task because of a hard platform constraint, Luna may temporarily continue through bounded Actions missions.
+If the sandbox itself is unavailable or cannot sustain the required repository engineering loop because of a hard platform constraint, Luna may temporarily continue that loop through bounded Actions missions. Supply/transport missions may still execute their own bounded acquisition, packaging, application, and output-verification mechanics while the sandbox is healthy; degraded mode begins when Actions substitutes for the sandbox engineering loop rather than merely servicing it. Missing direct GitHub network access, missing downloadable bytes, or an initially absent runtime/tool is not by itself evidence that the sandbox cannot sustain engineering work; when practical, transport or supply should first restore the sandbox path.
 
 This is called **degraded remote mode** rather than “moving development to Actions.” The distinction matters:
 
@@ -266,7 +274,7 @@ The design therefore has two layers of control.
 - make cleanup idempotent;
 - if context was lost, reconstruct ownership and terminal state from durable GitHub evidence before deleting unfamiliar objects.
 
-Cleanup must be recovery-aware rather than aggressively eager.
+Cleanup must be recovery-aware rather than aggressively eager. When the connected integration can establish ownership and terminal state but lacks a direct deletion/control operation, a bounded Actions cleanup mission is a valid fallback with minimum permissions and exact identity checks. That is remote control, not degraded remote execution.
 
 ## 15. Task-owned naming and collision reduction
 
@@ -373,10 +381,11 @@ Unless new evidence provides a strong reason to change them, these are intention
 - user host access is not a dependency;
 - project requirements define the engineering method;
 - Actions is bounded fallback/transport/execution rather than the default workstation;
-- exact patch/bundle transport is a first-class option, not merely an API-failure last resort;
-- remote failure must be diagnosed from evidence before blind retry or source modification;
+- exact byte-preserving transport is a first-class, bidirectional option rather than merely a publication fallback;
+- exact state should avoid unnecessary model-mediated reserialization when that path would add meaningful fidelity or partial-update risk and a practical byte-preserving alternative exists;
+- every mission result must be checked against its expected outputs, and remote failure must be diagnosed from evidence before blind retry or source modification;
 - concurrent actors are assumed;
-- temporary remote state is task-owned, bounded, recovery-aware, and growth-controlled;
+- temporary remote state is task-owned, bounded, recovery-aware, and growth-controlled, with bounded cleanup missions available when direct control is insufficient;
 - completion claims are evidence-bounded;
 - core skill remains host-neutral while ChatGPT Web is the fully specified integration path;
 - runtime policy and maintainer rationale remain separate;
@@ -389,6 +398,24 @@ Unless new evidence provides a strong reason to change them, these are intention
 Rejected: always prefer file writes, then native Git objects, then patch mission only as a final fallback.
 
 Reason: large multi-file changes, binary/mode/history semantics, transport limits, and persistent API instability can make one exact patch/bundle objectively safer or cheaper earlier.
+
+### A rigid gap taxonomy as the core decision model
+
+Rejected.
+
+Reason: acquisition, transport, control, and execution needs can overlap in one task, and host capabilities will evolve. Requiring every situation to fit a fixed category can create new false boundaries without improving the durable decision. The more stable rule is that the normal engineering loop stays in a usable sandbox; bounded missions may supply, transport, or control remote state as needed; remote edit/build/test execution is reserved for the case where the sandbox itself cannot faithfully sustain it.
+
+### Model-mediated per-file reconstruction as the default exact transport
+
+Rejected when exact state already exists, model-mediated reconstruction adds meaningful fidelity or partial-update risk, and a practical byte-preserving path exists.
+
+Reason: if the source tree or verified payload already exists as exact bytes, routing it through model-authored complete-file/blob content adds serialization and partial-update risk without adding useful reasoning. This is a preference, not a permanent ban: small intentional text edits and constrained hosts may still make direct content operations the best path.
+
+### Embedding the payload in workflow text and calling it exact transport
+
+Rejected for substantial exact payloads when a practical byte-preserving channel exists.
+
+Reason: model-authored YAML, heredocs, command literals, or large textual workflow inputs still pass the payload through model serialization. Actions can execute that text, but it does not recover the fidelity benefit of carrying an already-existing exact patch/archive/bundle/artifact/file reference.
 
 ### Actions as the normal coding environment
 
@@ -445,7 +472,8 @@ Before expanding Luna, ask:
 7. Can it create unbounded remote state, quota, storage, or cost?
 8. Does it assume a host capability that may not exist?
 9. Will a normal user need to understand this concept, or can Luna keep it invisible?
-10. Is there a simpler rule that preserves the same reliability?
+10. Does this rule encode today's connector/tool surface too literally, or will its invariant still make sense as hosts and models improve?
+11. Is there a simpler rule that preserves the same reliability?
 
 ## 24. Maintenance discipline
 

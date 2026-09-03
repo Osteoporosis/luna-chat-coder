@@ -4,8 +4,8 @@ description: Keep repository development reliable from chat by using the sandbox
 license: MIT
 compatibility: Requires access to durable repository state. The fully specified ChatGPT Web path requires both the GitHub Plugin and the ChatGPT Codex Connector GitHub App for the target repository. GitHub Actions access is required only when an Actions mission is needed. Other Agent Skills hosts may use the core policy only to the extent that equivalent capabilities actually exist.
 metadata:
-  version: "0.1.3"
-  luna-upstream-version: "0.1.3"
+  version: "0.1.4"
+  luna-upstream-version: "0.1.4"
   luna-upstream-repository: "https://github.com/Osteoporosis/luna-chat-coder"
   luna-upstream-skill: "https://github.com/Osteoporosis/luna-chat-coder/blob/main/.agents/skills/luna-chat-coder/SKILL.md"
 ---
@@ -35,7 +35,7 @@ Do not use `local container`, `local environment`, or `bridge` for these concept
 6. **GitHub holds exact durable truth.** Chat is useful for intent; conversation reconstruction is not a substitute for exact source when durable source exists. Keep observed repository facts distinct from material assumptions.
 7. **Durable handoff is task-owned.** Use a branch, PR, issue, commit, or task-owned artifact when losing state would make recovery expensive or ambiguous; keep cheap intermediate reasoning in chat.
 8. **Assume concurrent actors.** Other chats, agents, CI, or humans may create or move branches, refs, commits, workflows, and artifacts while this task is active. Resolve mutable names to current immutable identity before writes, publication, or cleanup; preserve unfamiliar state and never infer ownership from age or naming alone.
-9. **Choose the simplest reliable exact path.** File writes, native Git object operations, archives, artifacts, and patch/bundle missions are transport choices, not a rigid hierarchy. Select using exactness, payload shape, round trips, integration limits, and observed reliability. When exact bytes already exist and model-mediated reconstruction would add meaningful serialization or partial-update risk, prefer a byte-preserving path; direct content writes remain appropriate for small intentional textual changes or when no better exact transport exists.
+9. **Choose the simplest reliable exact path.** Select transport using exactness, payload semantics, integration limits, round trips, and observed reliability. Model-visible text is useful for semantic text; prefer byte-preserving paths for opaque bytes when practical. Transport policy must not alter or suppress repository content.
 10. **Verify mission results; diagnose before retrying.** Inspect a mission's returned state and expected outputs before relying on them, even when the run reports success. Diagnose failures from logs/results before changing source or repeating an operation; do not guess a root cause from status alone.
 11. **The user's host computer is outside the workflow.** Do not require direct access to it or ask the user to weaken host isolation merely to unblock ordinary repository development.
 12. **Evidence bounds completion claims.** Report only operations and checks that actually ran against the relevant state.
@@ -90,19 +90,19 @@ Read [`references/actions-missions.md`](references/actions-missions.md) before d
 
 ## Publish exact changes
 
-Choose the lowest-overhead path that remains exact and reliable for the observed task:
+Capture the expected base SHA before publication and re-resolve it before consequential writes. If the base moved, recover and deliberately rebase, merge, or recreate the result.
 
-- connected repository file operations are usually efficient for small textual changes;
-- native Git object operations are useful when they preserve already-existing exact Git state without unnecessary reserialization;
-- an exact archive, checksummed artifact payload, patch, or bundle can be preferable for larger or structured payloads, repeated-write overhead, binary/mode/rename semantics, connector limits, or persistent API instability.
+Choose the simplest reliable exact route for the observed payload and host. These are defaults, not a hierarchy:
 
-Capture the expected base SHA before substantial publication work. If the base moved, recover the new durable state and deliberately rebase, merge, or recreate the payload. Do not reconstruct a substantial verified change from prose when exact source bytes can be transported.
+- use connected file operations for small, isolated text edits;
+- for a larger verified semantic-text change, prefer an exact plain-text Git patch over re-emitting complete files when model-visible text is the practical route;
+- prefer Git objects, bundles, archives, artifacts, or file references for opaque, binary, or filesystem-sensitive state.
 
-Model-mediated reconstruction or serialization of publication payloads can introduce unintended byte-level drift even when the intended source is unchanged. Avoid routing an already-verified multi-file, binary, or otherwise structured payload through model-authored complete-file or blob content when a practical byte-preserving transport can carry the existing bytes. When a published file or object differs from the verified source, consider the publication path itself as a possible cause before assuming the source or overall publication strategy is wrong.
+Avoid Luna-introduced transport-only opaque encodings such as Base64 of existing bytes when the model does not need to interpret them. This is not a content filter: encoded or high-entropy data that belongs to the repository or task must be preserved and handled faithfully.
 
-If an exact Git patch already exists in the sandbox but no practical byte-preserving sandbox-to-remote upload exists, a model/tool-mediated textual transport can still be used as a verified fallback when the remote payload checksum and resulting Git tree are checked against the sandbox expectations before publication. This is end-to-end verified exactness, not an inherently byte-preserving channel. Prefer the verified patch over repeatedly reserializing large complete files after a publication mismatch. See `references/actions-missions.md` for the transport contract.
+Treat a mismatch between the verified sandbox result and published Git state as a transport/publication failure until evidence shows otherwise. Preserve the verified sandbox result and inspect the serialization or transport path before changing source.
 
-If the strategy still appears appropriate, a limited retry of only the failed payload may be reasonable. Preserve the verified source rather than reconstructing it unnecessarily, avoid disturbing outputs that are already known to be correct, and use available integrity evidence to confirm the result when practical. If the failure persists, reassess the transport or report the blocker rather than repeating the same operation blindly.
+If the only exact route is model-mediated, use the verified fallback in `references/actions-missions.md` rather than reconstructing the result from prose.
 
 ## Recovery
 

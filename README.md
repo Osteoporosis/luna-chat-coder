@@ -2,7 +2,7 @@
 
 [한국어 README](README.ko.md)
 
-**Version 0.1.3**
+**Version 0.1.4**
 
 Use ordinary ChatGPT Web conversations for real GitHub repository work—without running a local coding agent, opening a tunnel, or giving the chat access to your computer.
 
@@ -24,7 +24,7 @@ For the ChatGPT Web setup documented here:
 1. Choose **Use this template → Create a new repository**.
 2. In ChatGPT, install/connect the **GitHub Plugin** from <https://chatgpt.com/plugins>.
 3. On GitHub, install the **ChatGPT Codex Connector** from <https://github.com/apps/chatgpt-codex-connector> and grant it access to the new repository. If the App is already installed for selected repositories, add the new repository to that list.
-4. In a normal ChatGPT conversation, send the repository URL and the development task.
+4. In a normal ChatGPT conversation, send the repository URL and the development task—for example, ask it to implement a change and open a pull request.
 
 That is the normal workflow. A repository created from this template already contains Luna, and you should not need to mention Luna by name or manage its internal recovery steps yourself.
 

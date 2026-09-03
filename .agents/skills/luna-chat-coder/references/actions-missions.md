@@ -56,42 +56,39 @@ After supply, return to the sandbox work container for editing, building, testin
 
 ## Exact transport mission
 
-Transport is bidirectional. It may bring exact repository source into the sandbox or carry an already-verified sandbox change back to durable GitHub state. It is not reserved for complete API failure, and it should not force the engineering loop itself into Actions.
+Transport may bring exact source into the sandbox or publish an exact sandbox result. Keep the sandbox as the engineering loop unless degraded remote mode is required.
 
-Prefer a byte-preserving transport when exact bytes already exist and reconstructing them through model-authored per-file/blob content would add meaningful serialization, partial-update, or round-trip risk. Small intentional textual edits can still use direct file operations when that is simpler and sufficiently reliable. Avoid rigid file-count thresholds; choose based on payload fidelity, semantics, and observed integration behavior.
+### Select the representation
 
-Treat the workflow definition as control-plane text, not as the transport payload. Do not embed a substantial source tree, patch, archive, or generated replacement content inside model-authored workflow YAML, shell heredocs, command literals, or large textual workflow inputs and then describe that path as byte-preserving transport. Prefer the mission to retrieve an already-existing exact artifact/archive/patch/bundle/commit or a host-provided file reference, and verify its checksum before use. If the host can transfer a sandbox file to the mission byte-for-byte, use that capability; if it cannot, use another exact path or the verified textual-patch fallback below.
+Choose the simplest reliable exact path using payload semantics, integration limits, round trips, and observed reliability. The following are defaults, not a hierarchy:
 
-Do not assume artifacts form a symmetric sandbox↔runner channel. A workflow can produce an artifact for later download, but sending an existing sandbox payload into a mission requires an actual host-provided file-transfer path, prior durable Git/Actions state, or another exact mechanism. Discover that capability instead of inventing it.
+- use direct file writes for small, isolated text edits;
+- use an exact plain-text Git patch for larger semantic-text changes when text transport is practical;
+- prefer a Git object, bundle, archive, artifact, or file reference for opaque, binary, or filesystem-sensitive state.
 
-An Actions artifact is a carrier, not by itself a fidelity guarantee. When exact source or another payload depends on hidden paths, executable modes, symlinks, case sensitivity, or similar filesystem semantics, package an inner archive, Git bundle, or other format that preserves the required state and checksum that inner payload. Do not upload a raw directory with default artifact behavior and call the wrapper exact; for example, a complete Luna source payload must not silently omit `.agents/`.
+Treat transport capabilities as directional. A repository read or downloadable artifact does not imply a sandbox-to-runner or upload path; discover the actual capability rather than inventing one. Inspect a failed connected operation before retrying or switching transports.
 
-### Bringing exact source into the sandbox
+Do not encode existing bytes as Base64 or another opaque text representation merely to move them through model-visible text. This rule concerns Luna-introduced transport representation, not project content: opaque-looking repository or task data must still be preserved and handled faithfully. Encoding performed inside a tool after the model supplies semantic text or a file/reference is outside this rule.
 
-If the sandbox cannot reach GitHub directly and connected repository reads are impractical for the repository size or shape, a transport mission may export the expected commit or PR-head as an archive, Git bundle, or other deterministic artifact. The mission should:
+This constraint ends at the model boundary. Non-model byte channels may use any exact, efficient representation supported by the host in either direction, including Actions-to-sandbox transfers.
 
-1. resolve and verify the expected immutable source SHA;
-2. check out exactly that state;
-3. produce the smallest suitable byte-preserving inner payload, using a Git bundle when history/objects matter or an archive that includes hidden paths and preserves required filesystem semantics when a complete source tree is sufficient;
-4. record source SHA, production command, relevant platform/tool versions, and a checksum;
-5. upload the payload with bounded retention;
-6. let the sandbox verify checksum and source/tree identity before editing.
+Keep payload data separate from workflow control text. When an exact file or object already exists, transport or reference it instead of embedding its contents in workflow YAML, heredocs, or command literals. An artifact is only a carrier; use an inner archive, bundle, or equivalent when modes, symlinks, hidden paths, or other filesystem semantics matter.
 
-After transfer, return to the sandbox for normal source inspection, editing, build, test, and debugging. Lack of direct GitHub network access is a transport constraint, not by itself a reason for degraded remote execution.
+### Bring exact source into the sandbox
 
-### Carrying verified changes out of the sandbox
+If ordinary Git access is unavailable and connected repository reads are impractical, a transport mission may export the expected commit or PR head as a Git bundle or archive.
 
-A patch or bundle can be better than repeated independent writes when:
+1. verify the immutable source SHA;
+2. produce a payload that preserves the required Git/filesystem semantics;
+3. record provenance and checksum the payload;
+4. upload it with bounded retention;
+5. verify checksum and source identity in the sandbox before editing.
 
-- a verified change spans enough state that complete-file writes create unnecessary round trips or partial-update risk;
-- connected write operations return repeated or structurally relevant errors after those errors have been inspected;
-- payload or operation limits make direct publication brittle;
-- binary changes, renames, executable-bit/mode changes, or Git object/history semantics should be preserved exactly;
-- a single checksummed payload materially simplifies recovery or handoff.
+Lack of direct GitHub network access is a transport constraint, not by itself a reason for degraded remote execution.
 
-Do not switch transports merely because one API call failed. Inspect the returned error first. Retry an unchanged operation only when the evidence supports a transient failure and a retry is safe. If the same path remains unreliable, switch deliberately rather than repeating it blindly.
+### Publish a verified sandbox result
 
-A Git patch can be an exact change payload for Git-tracked content and tracked modes when it is generated between two explicit Git tree states. Do not use the bare ambient `git diff --binary` form as the exact-transport recipe: without explicit tree arguments it represents working-tree versus index state, can omit staged or untracked intended changes, and `git diff` may invoke repository-configured text conversion that is unsuitable for an applyable patch. First materialize and verify the intended result as a Git tree or commit, then diff the expected base tree against that result with text conversion and external diff helpers disabled.
+First materialize the intended result as an explicit Git tree or commit. Do not generate the transport patch from ambient working-tree state.
 
 For example, after deliberately staging exactly the intended result:
 
@@ -103,39 +100,19 @@ git diff --binary --no-textconv --no-ext-diff \
 sha256sum change.patch
 ```
 
-The staged/index state above is only a way to materialize the explicit result tree; unrelated ambient staged, unstaged, or untracked state is not part of the transport contract. Preserve the expected `result_tree` identity with the payload. A result commit may be used instead when that is the simpler durable state.
+Use a model-visible patch when its changed content is semantic text. `GIT binary patch` is a known opaque case because its body is encoded, but its absence does not by itself make a patch semantic. Prefer a file/object/artifact path for opaque changed content when practical.
 
-### Textual patch fallback when no byte-preserving upload exists
+When a semantic-text patch must cross a model-visible channel:
 
-If an exact `change.patch` already exists in the sandbox but the host has no practical sandbox-to-remote file upload, the patch may cross a model/tool-mediated text channel when exactness is verified end to end rather than assumed from the channel.
+1. record the expected base SHA, patch checksum, and expected result tree;
+2. transfer the patch as task-owned data, using deterministic chunks only when required by limits;
+3. verify the reassembled checksum and confirm remote `HEAD` still equals the expected base;
+4. run `git apply --check --index` and `git apply --index`, then verify `git write-tree` equals the expected result tree;
+5. publish the clean result and verify the committed tree still equals the expected result tree.
 
-1. Record the patch checksum, expected base SHA, and expected result tree before transport.
-2. Store the patch as task-owned data, separate from workflow YAML or executable command text. Deterministic chunks are acceptable when one-call limits require them.
-3. Verify the stored/reassembled patch bytes against the sandbox checksum before execution.
-4. From the expected clean base, run `git apply --check --index`, apply it, and verify `git write-tree` equals the expected result tree.
-5. Publish the clean result tree and remove the temporary patch/chunks/workflow from the final source tree.
+A checksum, result-tree, or publication mismatch is a transport failure until evidence shows otherwise. Preserve the verified sandbox result; do not repair transport drift with ad-hoc text edits or source changes. If no exact non-model route exists for an opaque payload, the same end-to-end verification contract may be used as a last transport fallback.
 
-A checksum mismatch is a transport failure; do not repair it with ad-hoc string edits. After a complete-file serialization mismatch, prefer a previously verified patch with this contract over repeatedly re-emitting the same large files.
-
-Bind the payload to the expected base SHA and result tree. From a clean checkout of the expected base, the remote side should:
-
-```text
-verify remote HEAD == expected base SHA
-verify patch checksum
-git apply --check --index change.patch
-git apply --index change.patch
-verify git write-tree == expected result tree
-git diff --cached --check
-run only mission-local integrity/publication checks required by the transport contract
-commit the staged result to the task branch
-verify committed tree == expected result tree
-```
-
-Substantive repository edit/build/test/debug iteration remains sandbox-owned unless degraded remote mode is active. A transport mission may perform bounded checks that validate transport or publication output without becoming the repository engineering loop.
-
-Use a Git bundle when preserving Git objects or history is more useful than a patch. A complete source archive is also natural for inbound source or supply payloads. For ordinary repository changes, do not default to blindly extracting a partial archive over the working tree: without an explicit manifest it can underspecify deletions, renames, modes, symlinks, or path safety. If a file-set archive is intentionally the best payload, stage it, validate its path set/checksums and any required replacement/deletion semantics, then apply it deliberately.
-
-Before choosing artifact transport, consider current payload-size, upload/download, and retention limits exposed by the integration or platform. Do not recreate a substantial change from prose or ad-hoc string replacements when an exact payload exists.
+Use a Git bundle when Git objects or history matter. Use an archive for a complete source or supply payload when history does not matter. Do not reconstruct a substantial verified result from prose when an exact payload exists.
 
 ## Degraded remote mode
 

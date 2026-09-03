@@ -2,7 +2,7 @@
 
 [English README](README.md)
 
-**Version 0.1.3**
+**Version 0.1.4**
 
 평소 쓰는 ChatGPT 웹 채팅으로 실제 GitHub 리포지토리 작업을 해보세요. 별도의 로컬 코딩 에이전트를 띄우거나, 터널을 열거나, 내 컴퓨터를 채팅에 연결할 필요가 없습니다.
 
@@ -24,7 +24,7 @@ ChatGPT에는 이미 코드를 실행할 수 있는 샌드박스가 있습니다
 1. **Use this template → Create a new repository**를 선택합니다.
 2. ChatGPT의 <https://chatgpt.com/plugins>에서 **GitHub Plugin**을 설치하고 연결합니다.
 3. GitHub에서 <https://github.com/apps/chatgpt-codex-connector>의 **ChatGPT Codex Connector**를 설치하고 새 리포지토리에 접근 권한을 부여합니다. 이미 일부 리포지토리만 허용하도록 설치했다면 새 리포지토리를 그 목록에 추가합니다.
-4. 일반 ChatGPT 대화에서 리포지토리 URL과 원하는 개발 작업을 보냅니다.
+4. 일반 ChatGPT 대화에서 리포지토리 URL과 원하는 개발 작업을 보냅니다. 예를 들어 변경을 구현하고 pull request를 열어 달라고 요청할 수 있습니다.
 
 평소 사용법은 여기까지입니다. 이 template으로 만든 리포지토리에는 Luna가 이미 들어 있고, Luna 이름을 따로 언급하거나 내부 우회 절차를 직접 운영할 필요가 없어야 합니다.
 

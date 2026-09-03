@@ -67,6 +67,12 @@ The repository defines the engineering method. Luna helps the current chat envir
 
 This boundary matters when Luna itself is being developed inside a repository that also uses Luna. Maintainers must distinguish **rules Luna needs for its own behavior** from **opinions about how the surrounding project should be run**. The former belongs here; the latter belongs in project instructions unless it is strictly necessary for Luna to operate safely.
 
+### Canonical maintenance boundary
+
+The canonical `Osteoporosis/luna-chat-coder` repository is both Luna's development repository and the source copied into downstream templates. Luna's normal repository-development policy therefore applies while maintaining the canonical repository itself; `AGENTS.md` intentionally serves the same discovery role in both contexts, and `SKILL.md` routes Luna maintenance to this rationale.
+
+Maintainer guidance must not leak into downstream project policy. In particular, freedom to rewrite or refactor canonical Luna aggressively is a rule for maintaining Luna, not a rule for repositories that merely use the skill.
+
 ## 4. Why the sandbox is primary
 
 The sandbox work container should be treated as a disposable development workstation, not merely a temporary text editor.
@@ -152,28 +158,39 @@ Luna should not turn this into a general-purpose environment-management methodol
 
 ## 10. Exact transport is a first-class option
 
-Transport is bidirectional. A sandbox that cannot reach GitHub directly may still be perfectly capable of editing, building, testing, and debugging once exact source arrives. Likewise, a verified sandbox change may be safer to publish as one exact payload than as many independent content writes.
+Transport is bidirectional. Connected file operations, Git objects, archives, artifacts, patches, and bundles are alternatives. Choose the simplest reliable exact path from payload semantics, integration limits, round trips, and observed reliability. Representation-specific defaults guide that choice rather than forming a hierarchy: direct writes fit small isolated text edits, semantic-text patches fit larger textual changes, and byte-preserving paths fit opaque, binary, or filesystem-sensitive state.
 
-Connected file operations, native Git objects, archives, artifacts, patches, and bundles are alternatives. The correct choice depends on payload semantics, integration limits, round trips, and observed reliability rather than a rigid hierarchy or file-count threshold.
+Exactness and opacity are separate properties. **Exact bytes** means byte identity is preserved; it does not mean the representation is binary, encoded, or unreadable. A semantic-text patch can be exact. Conversely, an encoded payload can be opaque to the model even when it is exact.
 
-When exact bytes already exist, unnecessary model-mediated reconstruction adds serialization and partial-update risk without adding useful reasoning. Small intentional textual edits are different and may still be simplest as direct file writes.
+Model-mediated reconstruction is generative rather than byte-preserving. Sampling can select different tokens according to decoding settings such as temperature; generation-time text-watermarking schemes, when present, intentionally bias token selection. Either can change bytes without changing the intended meaning. Exact transport therefore relies on transferred bytes plus integrity checks, not faithful-looking model regeneration.
 
-Workflow text is control-plane text, not automatically an exact payload channel. Putting a large patch or source tree inside model-authored YAML, heredocs, or command strings does not make it byte-preserving merely because Actions executes it. Prefer an existing exact object/file/artifact reference when the host can carry it directly.
+### Model-visible transport and safety classifiers
+
+Use **safety classifier** for the deployment safeguard discussed here. Both OpenAI and Anthropic use that term; Anthropic also uses **Constitutional Classifiers** for a specific classifier design.
+
+During Luna maintenance, model-visible Base64 and similar opaque transport encodings have been observed to coincide with long safety-classifier waits. Luna treats that observed behavior as operational evidence: do not create opaque transport text when a practical exact alternative exists. This policy does not require knowing a host's internal routing or claiming that every encoded string deterministically triggers a classifier.
+
+This is a transport rule, not a content rule. Opaque-looking repository or task content must still be preserved and used faithfully. Tool-internal encoding that happens after the model boundary is not the target. Non-model byte channels are outside this concern and may use any exact, efficient representation the host supports in either direction, including Actions-to-sandbox transfer.
+
+Safety systems are a durable constraint. Luna should not depend on future hosts relaxing safety review; reduce unnecessary classifier surface instead. Transport capabilities may improve, so exact route selection remains capability-driven.
+
+A Git patch is suitable for model-visible transport when its changed content is semantic text. `GIT binary patch` is a known opaque case because Git encodes its binary body with Base85, but the absence of that marker does not by itself make a patch semantic.
+
+Public references establish terminology and implementation examples; the observed latency above is maintainer evidence:
+
+- OpenAI, `Introducing gpt-oss-safeguard`: <https://openai.com/index/introducing-gpt-oss-safeguard/>
+- Anthropic, `Constitutional Classifiers`: <https://www.anthropic.com/news/constitutional-classifiers>
+- Git binary-patch Base85 implementation: <https://github.com/git/git/blob/master/base85.c>
+- OpenAI API temperature semantics: <https://developers.openai.com/api/reference/cli/resources/responses/methods/create>
+- Kirchenbauer et al., `A Watermark for Large Language Models`: <https://proceedings.mlr.press/v202/kirchenbauer23a.html>
 
 ### Verified textual patch fallback
 
-The publication work that produced version `0.1.3` exposed an important correction. The sandbox had an exact Git patch, but there was no practical sandbox-to-GitHub file upload. Large complete-file serialization through repository APIs produced blob mismatches. The initial response was too absolute: it treated “not inherently byte-preserving” as if it also meant “cannot be made exact.”
+The publication work that produced version `0.1.3` showed why channel fidelity and end-to-end exactness must be separated. The sandbox had an exact Git patch, but no practical sandbox-to-GitHub file upload; repeated complete-file serialization produced blob mismatches.
 
-Those are different properties. A textual Git patch can cross a model/tool-mediated storage channel when exactness is established end to end:
+A semantic-text patch can cross a model-mediated channel exactly when the base SHA, patch checksum, and expected result tree are recorded and the receiver verifies the payload and the published tree. Deterministic chunking is acceptable when channel limits require it.
 
-- record the expected base SHA, patch checksum, and expected result tree in the sandbox;
-- store the patch as data, separately from executable workflow text;
-- verify the stored or reassembled remote bytes against the checksum;
-- apply from the expected clean base with `git apply --check --index` and `git apply --index`;
-- verify `git write-tree` reproduces the expected result tree;
-- publish the clean result tree without transport chunks or temporary workflow files.
-
-This is not a claim that the text channel is byte-preserving. It is an exact transport because corruption becomes observable at both the payload and result-tree boundaries. When complete-file publication has already drifted and an exact patch exists, this verified fallback is preferable to repeatedly re-emitting the same large files.
+If the exact payload is opaque, prefer a non-model byte path. When no such path exists, the same checksum-and-result-tree contract remains the last exact fallback; the opaque payload is tolerated because transport necessity is established, not because encoding is preferred.
 
 The detailed procedure belongs in `actions-missions.md`.
 
@@ -323,6 +340,7 @@ Unless new evidence provides a strong reason to change them:
 - Actions is bounded fallback/transport/execution rather than the default workstation;
 - Luna is responsible for the safety and cleanup of Luna-created remote state, not for imposing repository-wide security policy;
 - exact byte-preserving transport is first-class, and end-to-end verified textual patch transport is an acceptable fallback when no practical byte-preserving upload exists;
+- Luna should not introduce model-visible opaque transport encodings when the same bytes can travel through a practical file/object path; project content itself is unaffected;
 - mission outputs are verified and failures are diagnosed before blind retry;
 - concurrent actors are assumed;
 - temporary remote state is task-owned, bounded, and recovery-aware;
@@ -339,15 +357,15 @@ Rejected because it adds remote latency, metered execution, workflow/artifact ma
 
 ### A rigid publication hierarchy or gap taxonomy
 
-Rejected because transport, supply, control, and execution needs can overlap and host capabilities evolve. The stable boundary is whether the sandbox can remain the engineering loop and which exact path is simplest for the observed payload.
+Rejected because host capabilities vary. Representation-specific defaults are still useful—small text edits can use direct writes, larger semantic-text changes favor plain-text patches, and opaque bytes favor byte-preserving paths—but none overrides exactness, integration limits, or observed reliability.
 
 ### Reconstructing already-existing exact state through model prose
 
 Rejected when a practical exact object, patch, bundle, archive, artifact, or file reference already exists. Re-serialization adds fidelity and partial-update risk without adding useful reasoning.
 
-### Embedding a substantial payload inside workflow code and calling it byte-preserving
+### Encoding transport bytes into model-visible text when a byte path exists
 
-Rejected. Workflow YAML, heredocs, and command strings are still model-authored text. A payload should remain data and be verified independently.
+Rejected. Workflow text and other model-authored fields are not byte-preserving transports, and converting an existing payload to Base64 or another opaque representation only increases model-visible classifier surface. Semantic-text source patches and encoded strings that are actual project content are not this case.
 
 ### Rejecting a verified textual patch only because the channel is not inherently byte-preserving
 
@@ -403,7 +421,9 @@ Before expanding Luna, ask:
 
 Treat every proposed Luna change as a hypothesis about how to improve the system, not as a commitment created by editing files.
 
-Discussion and implementation are one iterative design loop: understand the current behavior, make the smallest promising change, verify what actually improved or regressed, and keep refining only while evidence supports the direction.
+Discussion and implementation are one iterative design loop: understand the current behavior, make the change the design requires, verify what actually improved or regressed, and keep refining only while evidence supports the direction. Diff size is not a maintenance objective. Canonical Luna may be rewritten or refactored aggressively when that produces a clearer, more coherent policy.
+
+This freedom applies only to maintaining Luna itself. It does not impose a rewrite preference on downstream projects, and it does not justify a larger runtime skill: the copied skill should remain compact, readable, and easy for weaker models to execute reliably. Runtime rules that bound an Actions mission constrain remote side effects, not maintenance diff size.
 
 Before accepting a change, compare the final candidate with the prior baseline. Consider the intended failure mode, runtime complexity, normal-path user noise, portability, security boundaries, exactness/recovery behavior, and the checks that actually ran. Solving one edge case while making the healthy path more fragile or ceremonial is not progress.
 

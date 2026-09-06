@@ -4,8 +4,8 @@ description: Keep repository development reliable from chat by using the sandbox
 license: MIT
 compatibility: Requires access to durable repository state. The fully specified ChatGPT Web path requires both the GitHub Plugin and the ChatGPT Codex Connector GitHub App for the target repository. GitHub Actions access is required only when an Actions mission is needed. Other Agent Skills hosts may use the core policy only to the extent that equivalent capabilities actually exist.
 metadata:
-  version: "0.1.4"
-  luna-upstream-version: "0.1.4"
+  version: "0.1.5"
+  luna-upstream-version: "0.1.5"
   luna-upstream-repository: "https://github.com/Osteoporosis/luna-chat-coder"
   luna-upstream-skill: "https://github.com/Osteoporosis/luna-chat-coder/blob/main/.agents/skills/luna-chat-coder/SKILL.md"
 ---
@@ -13,6 +13,8 @@ metadata:
 # Luna Chat Coder
 
 Luna Chat Coder is a repository-development continuity and fallback policy for ordinary chat. Discover it early, keep it quiet on the normal path, and activate fallback mechanisms only when the normal sandbox or connected GitHub path becomes insufficient.
+
+This policy applies to repository development from a chat surface with a disposable code-execution workspace equivalent to the **sandbox work container** defined below. Its presence in a repository is not a reason to activate Luna on a persistent/local development machine, an Actions runner, or another unrelated workspace; temporary loss of an otherwise-supported sandbox is handled by degraded remote mode.
 
 ## Canonical terms
 
@@ -88,6 +90,22 @@ Degraded remote mode is a fallback, not the preferred environment. Tell the user
 
 Read [`references/actions-missions.md`](references/actions-missions.md) before dispatching an Actions mission.
 
+## Preserve substantial sandbox repository work for user handoff
+
+Use this snapshot path only when the host provides a direct way to expose a file from the sandbox work container privately to the current user as a downloadable file reference. Do not create an Actions mission, GitHub artifact, external upload, or other remote workaround solely to emulate a missing download path.
+
+When the requested repository result has accumulated a **meaningful amount of repository file writing or modification** in the sandbox since the most recent successfully exposed snapshot, make a best-effort snapshot immediately before the next applicable handoff boundary: before yielding the conversation turn, or before opening a pull request. Judge "meaningful amount" by cumulative work volume and practical reproduction cost rather than semantic importance or a fixed changed-line threshold. Large context-sensitive refactors, mechanical edits, formatting changes, or documentation rewrites can qualify even when their behavioral meaning is small; a tiny but important fix need not qualify merely because it is important. Smaller edits can accumulate into a qualifying amount.
+
+For this trigger, count files that are written or modified as intended repository output: source code, tests, scripts, migrations, generated files, configuration, documentation stored in the repository, assets, and other files intended to remain in the repository. Treat repository documentation the same as source for this purpose. Dependency/tool installation, caches, build or test output, runtime scratch state, and Git bookkeeping that are not intended repository output do not trigger a snapshot by themselves. Once the trigger is met, capture the repository workspace literally rather than reconstructing only the files that triggered it.
+
+Identify the materialized repository's top-level project directory, preferably the Git top level when available, and archive that entire directory as it exists. Include hidden, tracked, untracked, ignored, generated, and normally disposable in-root state, including `.git` when present. Luna defines no Git-based, file-type, or content exclusion list for this private user handoff; host-enforced restrictions still apply. Preserve symlinks as symlinks rather than following them outside the captured project root.
+
+Create the archive outside the captured project root so the snapshot cannot recursively contain itself or earlier snapshots created by this rule.
+
+A snapshot is supplementary and best-effort. If snapshot creation or user exposure fails after an attempt, do not let that failure block, delay, or otherwise change requested publication or pull-request creation, and do not switch to remote infrastructure solely for the snapshot. Continue the repository workflow and report only snapshot links that were actually exposed successfully. For a pull-request boundary, attempt the snapshot before the PR write only when the host can expose the file reference at that point; otherwise skip this snapshot path and continue.
+
+The snapshot is a user-owned handoff and recovery aid, not durable repository truth and not a substitute for publication or verification.
+
 ## Publish exact changes
 
 Capture the expected base SHA before publication and re-resolve it before consequential writes. If the base moved, recover and deliberately rebase, merge, or recreate the result.
@@ -128,6 +146,7 @@ At completion, report:
 - what exact state was changed or published;
 - what checks actually ran and their results;
 - any check that could not run and the exact blocker;
+- a user-downloadable sandbox snapshot link when one was successfully exposed under the snapshot rule;
 - whether degraded remote mode was used because the sandbox work container was unavailable or insufficient.
 
 Do not burden the user with Luna-specific mechanics on a healthy normal path.

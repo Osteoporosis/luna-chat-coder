@@ -224,6 +224,18 @@ branch / PR / issue / commit / task-owned artifact
 
 Cheap reasoning may remain in chat. A failed attempt that leaves useful logs, diagnosis, an exact payload, or a reusable commit can still be valuable; an attempt that leaves nothing reusable can be abandoned and restarted from the last known durable base.
 
+### User-downloadable snapshots of substantial sandbox repository work
+
+The sandbox has a narrower handoff gap that does not justify promoting every edit to GitHub: a chat model can spend substantial context, generation, editing, and verification effort on repository files that are still present only in the disposable workspace. When the chat host already provides a direct private sandbox-to-user file path, a complete project-root snapshot gives the user possession of that expensive-to-reproduce state at very low conceptual cost.
+
+The trigger therefore measures accumulated work volume and practical reproduction cost, not semantic importance. A broad formatting pass, mechanical migration, context-sensitive refactor, or documentation rewrite may be expensive to reproduce even when its behavioral meaning is small. Conversely, a tiny critical fix can be easy to recreate. Fixed line-count thresholds are also too literal; several smaller edits can accumulate into substantial work. The trigger follows intended repository output rather than a narrow definition of code: repository documentation counts the same as source, while environment churn, caches, build output, runtime scratch state, and other non-repository output do not create ceremony.
+
+Trigger scope and capture scope are intentionally different. Once substantial repository work triggers the handoff, the useful recovery object is the workspace as it actually exists, not a reconstruction from Git tracking. The snapshot therefore covers the whole materialized project root, including hidden, ignored, untracked, generated, normally disposable, and Git-metadata state. Luna does not add its own content exclusion policy to this private user handoff; host-enforced restrictions remain authoritative. The archive lives outside the captured root and preserves symlinks rather than traversing outside that boundary, preventing recursive or over-broad capture.
+
+This snapshot is supplementary rather than durable repository truth. The downloaded file may not be available to a later chat, and it can contain workspace state that was never intended for publication. GitHub commit and PR state therefore remain higher-trust recovery identities. The snapshot fills a user-possession gap; it does not redefine publication exactness.
+
+Snapshot creation is also deliberately best-effort and non-blocking. A model can misjudge whether an archive or download path will succeed. That local capability mistake should not become a new reason to withhold an otherwise valid commit, branch publication, or pull request. When direct download is unavailable or an attempt fails, Luna should not construct Actions, GitHub artifacts, or external storage solely to compensate. On a capable host, attempting the final snapshot before opening a PR gives the user the intended pre-PR checkpoint; failure still leaves the ordinary publication path unchanged.
+
 ## 14. Remote-state growth must be bounded
 
 Branches, workflows, runs, and artifacts have operational and sometimes monetary cost. They can also make ownership and recovery harder to understand.
@@ -335,6 +347,7 @@ Unless new evidence provides a strong reason to change them:
 - ordinary chat remains the development surface;
 - the sandbox remains the primary engineering workspace;
 - GitHub exact state outranks conversational reconstruction;
+- substantial intended repository-file work in a disposable chat sandbox gets a best-effort user-downloadable project-root snapshot when the host already supports direct file handoff; repository documentation counts the same as source, and snapshot failure does not gate publication;
 - the user's host computer is not a dependency;
 - project requirements define the engineering method and project-owned policy;
 - Actions is bounded fallback/transport/execution rather than the default workstation;
@@ -378,6 +391,14 @@ Rejected. Inspect evidence first; otherwise retries waste compute and can turn i
 ### Aggressive immediate cleanup
 
 Rejected because a failed run or artifact may still be the only useful diagnosis or recovery payload. Cleanup must understand ownership and terminal state.
+
+### Making a user snapshot a publication gate
+
+Rejected. The snapshot is a best-effort convenience and recovery handoff from a disposable sandbox, not durable source truth. If the model overestimates archive or download capability, that mistake must not prevent an otherwise valid publication or pull request.
+
+### Filtering a triggered snapshot down to Git or selected file classes
+
+Rejected because the point of the snapshot is possession of the actual sandbox workspace, including state that Git publication intentionally ignores. Once substantial repository-file work triggers a snapshot, Luna captures the literal project root rather than applying a second repository-content policy. Host-level restrictions still take precedence.
 
 ### Mandatory update checks or automatic self-update
 

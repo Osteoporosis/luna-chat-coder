@@ -18,11 +18,12 @@ Chat preserves intent and explanations. Durable repository state preserves exact
 1. Inspect the surviving sandbox workspace before assuming it is empty or stale.
 2. Identify the expected repository, task/PR if any, and commit SHA from GitHub.
 3. Inspect task-owned branches/refs, relevant workflow runs, and artifacts when a previous Actions mission may contain reusable or diagnostic state.
-4. Recover exact source from a commit, PR head, Git bundle/archive, artifact, or repository read operation.
-5. Compare recovered state with surviving sandbox changes before merge or replacement.
-6. Preserve unfamiliar sandbox or remote changes until ownership is understood.
-7. Re-read only the project instructions needed to restore the current task boundary; investigate stale documentation instead of letting it override current source or history.
-8. Resume from the recovered durable state.
+4. If the user supplies a previously downloaded sandbox workspace snapshot, treat it as supplementary working-state evidence and compare it with current durable GitHub identity before adopting or merging its contents. Do not let the snapshot outrank a current commit or PR head merely because Luna created it.
+5. Recover exact source from a commit, PR head, Git bundle/archive, artifact, or repository read operation.
+6. Compare recovered state with surviving sandbox changes before merge or replacement.
+7. Preserve unfamiliar sandbox or remote changes until ownership is understood.
+8. Re-read only the project instructions needed to restore the current task boundary; investigate stale documentation instead of letting it override current source or history.
+9. Resume from the recovered durable state.
 
 ## Drift
 

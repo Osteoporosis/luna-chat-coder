@@ -2,7 +2,7 @@
 
 [한국어 README](README.ko.md)
 
-**Version 0.1.4**
+**Version 0.1.5**
 
 Use ordinary ChatGPT Web conversations for real GitHub repository work—without running a local coding agent, opening a tunnel, or giving the chat access to your computer.
 
@@ -13,7 +13,7 @@ ChatGPT already has a sandbox that can run code. The catch is that network restr
 - **A useful built-in workspace.** Editing, building, testing, and debugging stay in the chat sandbox whenever it can do the job.
 - **Fewer dead ends.** If the normal path cannot complete a step reliably, Luna can use GitHub for that step instead of giving up or moving the whole workflow elsewhere.
 - **Safer recovery.** If the chat or sandbox disappears, Luna resumes from exact GitHub state rather than trying to recreate code from conversation history.
-- **Reliable handoff.** Luna checks the state it worked on and the result it publishes before reporting completion.
+- **Reliable handoff.** After substantial work on repository files, Luna can give you a complete sandbox workspace snapshot when the chat supports direct file downloads, while still checking the state it publishes before reporting completion.
 
 The point is simple: give the chat a repository and a development task, not a new piece of infrastructure to operate.
 

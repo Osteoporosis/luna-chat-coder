@@ -2,7 +2,7 @@
 
 [한국어 README](README.ko.md)
 
-**Version 0.1.5**
+**Version 0.1.6**
 
 Use ordinary ChatGPT Web conversations for real GitHub repository work—without running a local coding agent, opening a tunnel, or giving the chat access to your computer.
 
@@ -50,7 +50,7 @@ For the documented ChatGPT Web path, connect the GitHub Plugin and grant the Cha
 
 ## Documentation
 
-Runtime behavior lives in [`SKILL.md`](.agents/skills/luna-chat-coder/SKILL.md). Operational details are in [`actions-missions.md`](.agents/skills/luna-chat-coder/references/actions-missions.md) and [`recovery.md`](.agents/skills/luna-chat-coder/references/recovery.md). [`design-rationale.md`](.agents/skills/luna-chat-coder/references/design-rationale.md) is maintainer memory for changing Luna itself; normal skill use does not depend on it.
+Runtime behavior lives in [`SKILL.md`](.agents/skills/luna-chat-coder/SKILL.md). Operational details are in [`actions-missions.md`](.agents/skills/luna-chat-coder/references/actions-missions.md), [`sandbox-execution.md`](.agents/skills/luna-chat-coder/references/sandbox-execution.md), and [`recovery.md`](.agents/skills/luna-chat-coder/references/recovery.md). [`design-rationale.md`](.agents/skills/luna-chat-coder/references/design-rationale.md) is maintainer memory for changing Luna itself; normal skill use does not depend on it.
 
 Luna follows the Agent Skills structure. ChatGPT Web is the path documented and tested here; another host can use the same skill when it provides equivalent sandbox and GitHub capabilities.
 

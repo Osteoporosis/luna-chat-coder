@@ -118,6 +118,8 @@ Use a Git bundle when Git objects or history matter. Use an archive for a comple
 
 Enter degraded remote mode only when the sandbox work container itself is unavailable or cannot sustain the requested execution because of a hard platform constraint such as usage, duration, resource, or execution limits. Missing direct GitHub network access, missing downloadable bytes, or an initially absent tool/runtime should first be treated as something transport or supply may restore to the sandbox when practical; those conditions alone do not establish degraded remote mode.
 
+For duration failures, first check the sandbox execution options in [`sandbox-execution.md`](sandbox-execution.md).
+
 In this mode, continue through a sequence of bounded missions rather than pretending the runner is a persistent interactive workstation:
 
 1. establish or recover the exact durable repository base;
@@ -184,8 +186,6 @@ workflow run retained for diagnostics
 Artifacts should be as small and short-lived as practical, but do not remove the only exact recovery payload before its result has been consumed or replaced by durable repository state. Workflow runs may retain useful diagnostics; bounded growth matters more than an exact run count. Treat workflow definitions, historical runs, branches/refs, and artifacts as separate lifecycle objects.
 
 Control growth before it becomes a cleanup emergency. Prefer one task branch over a new branch for every retry when the same branch can safely carry the durable task state. Avoid duplicate transport/supply artifacts when an existing artifact is still the intended exact payload; when a newer durable result supersedes an older temporary payload, shorten retention or remove the obsolete copy when safe. During mission-heavy work, periodically inspect the count, size, age, and ownership of task branches, temporary workflows, recent runs, and artifacts. If growth is surprising or ownership is unclear, stop creating more temporary state until the existing state is understood. Respect repository/organization retention, storage, quota, and budget controls when they are observable.
-
-Keep a failed mission while it has debugging or recovery value. When a better durable path supersedes it, remove its task-owned temporary objects when safe. During mission-heavy work, occasionally audit task branches/refs, temporary workflow definitions, recent mission runs, and artifact storage so remote state tracks active work rather than forgotten attempts.
 
 If context is lost, reconstruct ownership and terminal state from durable GitHub evidence before cleanup. Preserve anything unfamiliar until that reconstruction is sufficient.
 

@@ -2,7 +2,7 @@
 
 [English README](README.md)
 
-**Version 0.1.5**
+**Version 0.1.6**
 
 평소 쓰는 ChatGPT 웹 채팅으로 실제 GitHub 리포지토리 작업을 해보세요. 별도의 로컬 코딩 에이전트를 띄우거나, 터널을 열거나, 내 컴퓨터를 채팅에 연결할 필요가 없습니다.
 
@@ -50,7 +50,7 @@ Luna는 리포지토리 자체의 지침과 요구사항을 읽고, 작업해야
 
 ## 문서
 
-일반 작업에서 쓰는 동작은 [`SKILL.md`](.agents/skills/luna-chat-coder/SKILL.md)에 정의되어 있습니다. 필요할 때 사용하는 세부 절차는 [`actions-missions.md`](.agents/skills/luna-chat-coder/references/actions-missions.md)와 [`recovery.md`](.agents/skills/luna-chat-coder/references/recovery.md)에 있습니다. [`design-rationale.md`](.agents/skills/luna-chat-coder/references/design-rationale.md)는 Luna 자체를 변경할 때 참고하는 maintainer memory이며, 일반 skill 동작은 이 문서를 읽지 않아도 완결됩니다.
+일반 작업에서 쓰는 동작은 [`SKILL.md`](.agents/skills/luna-chat-coder/SKILL.md)에 정의되어 있습니다. 필요할 때 사용하는 세부 절차는 [`actions-missions.md`](.agents/skills/luna-chat-coder/references/actions-missions.md), [`sandbox-execution.md`](.agents/skills/luna-chat-coder/references/sandbox-execution.md), [`recovery.md`](.agents/skills/luna-chat-coder/references/recovery.md)에 있습니다. [`design-rationale.md`](.agents/skills/luna-chat-coder/references/design-rationale.md)는 Luna 자체를 변경할 때 참고하는 maintainer memory이며, 일반 skill 동작은 이 문서를 읽지 않아도 완결됩니다.
 
 Luna는 Agent Skills 구조를 따릅니다. 이 리포지토리가 문서화하고 검증하는 환경은 ChatGPT Web이며, 다른 host도 동등한 sandbox와 GitHub 기능을 실제로 제공한다면 같은 skill을 사용할 수 있습니다.
 

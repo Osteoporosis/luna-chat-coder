@@ -4,8 +4,8 @@ description: Keep repository development reliable from chat by using the sandbox
 license: MIT
 compatibility: Requires access to durable repository state. The fully specified ChatGPT Web path requires both the GitHub Plugin and the ChatGPT Codex Connector GitHub App for the target repository. GitHub Actions access is required only when an Actions mission is needed. Other Agent Skills hosts may use the core policy only to the extent that equivalent capabilities actually exist.
 metadata:
-  version: "0.1.5"
-  luna-upstream-version: "0.1.5"
+  version: "0.1.6"
+  luna-upstream-version: "0.1.6"
   luna-upstream-repository: "https://github.com/Osteoporosis/luna-chat-coder"
   luna-upstream-skill: "https://github.com/Osteoporosis/luna-chat-coder/blob/main/.agents/skills/luna-chat-coder/SKILL.md"
 ---
@@ -75,6 +75,10 @@ When ordinary Git network access is available, clone/fetch and check out the res
 When the repository requires a capability that is absent, first try a safe and faithful sandbox setup if the environment permits it. Installation and configuration choices that are purely disposable development details can be resolved autonomously when the requested outcome is clear.
 
 Do not silently weaken verification because setup is inconvenient. If the repository requires a real integration for the behavior under test, prefer that integration over an easier substitute.
+
+### Long-running commands
+
+When a command times out or is likely to outlast a tool call, use [`references/sandbox-execution.md`](references/sandbox-execution.md) to check whether another sandbox execution path can sustain the work before moving it to Actions.
 
 ## Use Actions missions when they reduce real risk or cost
 

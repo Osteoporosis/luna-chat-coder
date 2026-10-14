@@ -37,6 +37,8 @@ Use ownership already expressed by a task branch, PR, issue, commit, mission nam
 
 If chat context has been lost, reconstruct the task boundary from durable GitHub state before cleanup or continuation. A failed mission's logs, artifact, branch, or commit may be more reliable recovery evidence than reconstructed conversation text.
 
+Before replaying an interrupted sandbox command or replacing its inputs, check for surviving work as described in [`sandbox-execution.md`](sandbox-execution.md).
+
 ## Restart when cheaper
 
 If a failed attempt leaves no reusable commit, patch, diagnosis, environment artifact, or other durable result, clean up task-owned temporary state when safe and restart from the last known durable base.

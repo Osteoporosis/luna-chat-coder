@@ -4,8 +4,8 @@ description: Keep repository development reliable from chat by using the sandbox
 license: MIT
 compatibility: Requires access to durable repository state. The fully specified ChatGPT Web path requires both the GitHub Plugin and the ChatGPT Codex Connector GitHub App for the target repository. GitHub Actions access is required only when an Actions mission is needed. Other Agent Skills hosts may use the core policy only to the extent that equivalent capabilities actually exist.
 metadata:
-  version: "0.1.6"
-  luna-upstream-version: "0.1.6"
+  version: "0.1.7"
+  luna-upstream-version: "0.1.7"
   luna-upstream-repository: "https://github.com/Osteoporosis/luna-chat-coder"
   luna-upstream-skill: "https://github.com/Osteoporosis/luna-chat-coder/blob/main/.agents/skills/luna-chat-coder/SKILL.md"
 ---
@@ -76,9 +76,9 @@ When the repository requires a capability that is absent, first try a safe and f
 
 Do not silently weaken verification because setup is inconvenient. If the repository requires a real integration for the behavior under test, prefer that integration over an easier substitute.
 
-### Long-running commands
+### Execution-tool failures and long-running commands
 
-When a command times out or is likely to outlast a tool call, use [`references/sandbox-execution.md`](references/sandbox-execution.md) to check whether another sandbox execution path can sustain the work before moving it to Actions.
+One execution interface failing does not establish that the sandbox is unavailable. For an invocation error such as `ClientError`, use [`references/sandbox-execution.md`](references/sandbox-execution.md) to check an available, permitted alternative before declaring sandbox failure. If it works, verify workspace/source identity and continue there. For timeouts or long-running commands, follow that reference's surviving-job and supervision guidance. Bound probes, preserve unresolved work, and never route around an explicit safety or permission denial. Project restrictions still govern remote fallback.
 
 ## Use Actions missions when they reduce real risk or cost
 

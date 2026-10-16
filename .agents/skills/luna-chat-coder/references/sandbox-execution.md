@@ -1,58 +1,25 @@
 # Sandbox Execution
 
-Use this reference when an execution-tool invocation fails, a command times out, or work is likely to outlast a tool call. An interface failure and a sandbox-wide execution failure are different observations.
+Use this reference for invocation failures, timeouts, or work that may outlast a tool call. A failed interface does not establish sandbox-wide failure; a command's nonzero exit status alone does not establish an invocation failure.
 
-## Invocation errors: try a permitted alternative first
+## Recover from invocation failures
 
-If a call returns an invocation error such as `ClientError` without program output or an exit status, record that exact result. It does not establish whether the command started, whether the workspace survived, or why the call failed. Do not infer censorship, OOM, deletion, or a platform-wide incident from the error name.
+Record the exact error, output, and status available. An error such as `ClientError` without program output or exit status leaves command start, workspace survival, and cause unknown. Do not infer censorship, OOM, deletion, or a platform-wide incident from its name.
 
-Before declaring sandbox execution unavailable, make a small, dependency-free check through another already available and permitted sandbox execution interface. In ChatGPT, a failure of `container.exec` may leave `python.exec` usable; Python's standard-library `subprocess` can then invoke the required commands in the sandbox. A user-visible Python tool such as `python_user_visible.exec` is another candidate only when its tool contract permits that use and the code/output is appropriate to show the user. Prefer a non-user-visible interface for internal diagnostics. These names are examples, not guaranteed capabilities or evidence of independent backends. On another chat host, look for the equivalent permitted code interpreter or process interface rather than assuming ChatGPT tool names exist.
+1. **Refresh the available routes.** In ChatGPT, `container.exec`, `python.exec`, and `python_user_visible.exec` are all usable sandbox execution routes; Python's standard-library `subprocess` can run commands. Select by the current host's exposed capabilities and tool contracts, not a fixed list, count, or preference order. Names and capabilities can change; use analogous execution routes on other LLM hosts. Distinct tools need not have independent backends or the same workspace.
+2. **Make one fresh recovery pass.** Before declaring execution unavailable, try every currently available, permitted route once, including the route that just failed. Earlier failures do not count toward this pass. Use minimal, dependency-free probes with short timeouts: simple output first, then a tiny standard-library child command if an interpreter works. Keep probes independent of project/site startup; do not apply probe-only isolation to real project commands. Inspect actual status and outputs; interpreter success alone does not prove process execution or the required repository commands work.
+3. **Continue as soon as a route can sustain the work.** Before replaying interrupted commands, inspect surviving task-owned processes, logs, and outputs, and verify workspace/source identity; use [recovery.md](recovery.md) if uncertain. Never duplicate unresolved jobs or side effects. Continue the sandbox engineering loop with unchanged verification, source binding, and terminal-status tracking; this is not degraded remote mode. Stop probing once a suitable route works. Changing interfaces does not guarantee a longer execution budget.
 
-Start with simple output. If the interpreter works, test process execution with a tiny standard-library child command, for example:
-
-```python
-import subprocess
-import sys
-
-result = subprocess.run(
-    # Isolate this probe from site startup, not the project's real commands.
-    [sys.executable, "-I", "-S", "-c", "print('sandbox-subprocess-ok')"],
-    capture_output=True,
-    text=True,
-    timeout=5,
-    check=False,
-)
-print("exit:", result.returncode)
-print("stdout:", result.stdout)
-print("stderr:", result.stderr)
-```
-
-Inspect the actual status and outputs; interpreter success alone does not prove subprocess or repository-required execution works. Before replaying interrupted work, inspect surviving task-owned processes, logs and outputs, and verify the expected repository/source identity through the working interface. A different interface may expose a different or reset workspace; use [recovery.md](recovery.md) if identity is uncertain. Do not launch a duplicate job or repeat side effects merely because the prior call returned no status.
-
-If the alternative sustains the required commands, continue the normal edit/build/test loop there with the same verification requirements, source binding and terminal-status tracking. This is still sandbox execution, not degraded remote mode. Do not keep retrying the broken interface while a suitable one works. Long-running subprocess work still needs the supervision below; changing interfaces does not guarantee a longer execution budget.
-
-## Bound the diagnosis
-
-For the same failure episode, use only the smallest discriminating probes: one minimal check of the failing route when needed and one suitable alternative route, with a child-process check only if that interpreter succeeds. Do not enumerate every tool alias or loop equivalent calls. An explicit safety/permission denial is not a transient invocation error to bypass through another interface.
-
-If no permitted sandbox path works, preserve concise observed recovery state and follow the project's authorized fallback. Where remote execution is prohibited, stop execution attempts and report the blocker. A later user-requested retry is a reasonable new check opportunity, not a guaranteed reset; recheck minimally and continue if it works. Do not invent a recovery probability, fixed waiting interval, or claim that a new message itself repairs the environment.
-
-Report the attempted interface and command, available time, output/status or exact error, last verified source and any unresolved job/workspace state. Retain successful evidence separately from later failures. Unknown survival or start state stays unknown; neither a successful print nor an older passing test proves a new product check passed.
+Declare sandbox execution unavailable for the required step only if every route in the fresh pass fails to sustain it. Bound the pass to these checks; do not start repeated cycles without new evidence or a later user-requested retry. Such a retry is a new check opportunity, not a guaranteed reset. Do not invent recovery probabilities, waiting intervals, or claims that a new message repairs the environment. An explicit safety/permission denial must not be bypassed through another route.
 
 ## Long-running commands
 
-### Check what stopped
+1. **Check what stopped.** Inspect timeout behavior, job state, and outputs. Distinguish a tool wait window from a command-killing wrapper or sandbox-wide limit; resolve surviving work or missing status before rerunning side effects.
+2. **Choose supported supervision.** Prefer a persistent session or job handle. For call-scoped limits, consider a supervised detached job: on compatible Unix hosts, `setsid` with `nohup` and redirected input/output, or an equivalent process API. Verify the needed behavior with a small task-relevant check.
+3. **Track completion.** Identify each attempt, bind it to stable source/inputs, retain logs and the actual command's terminal status, poll with short calls, and verify expected outputs. Give jobs a finite budget and supervision that can stop the workload and its children. Confirm current ownership before cleanup; restored PID files are historical state. Finish or stop owned jobs before handoff when possible; report unresolved work.
 
-Inspect the current call's timeout behavior, job state, and outputs. Distinguish the tool's wait window from a command-killing wrapper or a sandbox-wide limit, and check for surviving work before retrying.
+## Fallback and evidence
 
-### Choose a workable execution path
+If no permitted sandbox route sustains the step after the applicable recovery and supervision checks, preserve observed recovery state and follow the project's authorized fallback. Use a bounded [Actions mission](actions-missions.md) where remote execution is permitted; otherwise stop execution attempts and report the blocker without silently changing environments.
 
-Prefer a supported persistent session or job handle. For a call-scoped limit, also consider a supervised detached job. On compatible Unix hosts, `setsid` with `nohup` and redirected input/output, or an equivalent process API, can provide detachment. Choose from the current host's capabilities and verify the needed behavior with a small task-relevant check.
-
-### Follow the job through completion
-
-Keep each attempt identifiable, bind it to stable source/inputs, and retain logs plus the actual command's terminal status. Poll with short calls and verify the expected outputs before reporting completion. Resolve missing status or surviving work before rerunning side effects.
-
-Give the job a finite execution budget and supervision that can stop the workload, including its child processes. Before cleanup, confirm current ownership; PID files restored from a snapshot are historical state. Finish or stop owned jobs before handoff when possible, and report anything unresolved.
-
-When no permitted sandbox execution path can sustain the step and the project permits remote execution, use a bounded [Actions mission](actions-missions.md). Otherwise report the blocker without silently changing the execution environment.
+Report attempted routes/commands, available execution time, output/status or exact errors, last verified source, and unresolved job/workspace state. Keep successful evidence separate from later failures and unknown start/survival state explicitly unknown. Neither a successful probe nor an older passing test proves a new product check passed.

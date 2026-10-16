@@ -85,7 +85,7 @@ The policy therefore says **inventory before acquiring**. This does not assume t
 
 An invocation failure may be transient or limited to one tool interface. Stopping after one failed alternative can miss a working route, and excluding the original route from a fresh check can mistake a one-off failure for an outage. One bounded recovery pass therefore covers every currently available, permitted route, including the one that failed, and ends early when a route sustains the work. This is capability diagnosis, not permission to replay a command whose start or side effects remain unknown.
 
-Tool names, counts, presentation, and implementations can change across ChatGPT versions and other LLM hosts. Route selection belongs to the model using current capabilities and tool contracts; Luna does not impose a special restriction on a route because it is user-visible. Invocation recovery also does not replace long-running job supervision: a live job, a tool wait window, and an execution limit are different states. The procedure belongs in `sandbox-execution.md`.
+Tool names, counts, presentation, and implementations can change across ChatGPT versions and other LLM hosts. Route selection belongs to the model using current capabilities and tool contracts. Invocation recovery also does not replace long-running job supervision: a live job, a tool wait window, and an execution limit are different states. The procedure belongs in `sandbox-execution.md`.
 
 ## 5. Why the user's host computer is outside the model
 

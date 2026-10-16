@@ -34,7 +34,7 @@ Organization policy may require an administrator to approve the Plugin or GitHub
 
 Luna reads the repository's own instructions and requirements, recovers the exact source it should work from, and uses the chat sandbox for the normal edit/test loop.
 
-If an execution tool fails to run a command, Luna makes one fresh check of every currently available, permitted execution route, including the failed one, before treating sandbox execution as unavailable. It resumes work as soon as a suitable route works.
+If a call to an execution tool fails, Luna makes one fresh check of every currently available, permitted execution route, including the failed one, before treating sandbox execution as unavailable. It resumes work as soon as a suitable route works.
 
 When direct sandbox access is not enough, Luna can use the connected GitHub path for the missing step. If that path still cannot complete the step reliably, a bounded GitHub Actions run can handle it, then return the work to the sandbox when possible. GitHub Actions is not the default coding environment.
 

@@ -16,7 +16,7 @@ Chat preserves intent and explanations. Durable repository state preserves exact
 ## Procedure
 
 1. Inspect the surviving sandbox workspace before assuming it is empty or stale.
-2. Identify the expected repository, task branch/PR if any, and latest exact checkpoint commit from GitHub. Recover its pending work and verification status; an in-progress checkpoint is not a completion claim.
+2. Identify the expected repository, task branch/PR if any, and exact commit SHA from GitHub, including the latest task checkpoint when one exists. Recover any checkpoint's pending work and verification status; an in-progress checkpoint is not a completion claim.
 3. Inspect task-owned branches/refs, relevant workflow runs, and artifacts when a previous Actions mission may contain reusable or diagnostic state.
 4. If the user supplies a previously downloaded sandbox workspace snapshot, treat it as supplementary working-state evidence and compare it with current durable GitHub identity before adopting or merging its contents. Do not let the snapshot outrank a current commit or PR head merely because Luna created it.
 5. Recover exact source from a commit, PR head, Git bundle/archive, artifact, or repository read operation.

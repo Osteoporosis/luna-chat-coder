@@ -60,7 +60,13 @@ Transport may bring exact source into the sandbox or publish an exact sandbox re
 
 ### Select the representation
 
-Follow the transport-selection defaults and publication rules in [`SKILL.md`](../SKILL.md#publish-exact-changes).
+Choose the simplest reliable exact path using payload semantics, integration limits, round trips, and observed reliability. The following are defaults, not a hierarchy:
+
+- use direct file writes for small, isolated text edits;
+- use an exact plain-text Git patch for larger semantic-text changes when text transport is practical;
+- prefer a Git object, bundle, archive, artifact, or file reference for opaque, binary, or filesystem-sensitive state.
+
+Follow the publication rules in [`SKILL.md`](../SKILL.md#publish-exact-changes).
 
 Treat transport capabilities as directional. A repository read or downloadable artifact does not imply a sandbox-to-runner or upload path; discover the actual capability rather than inventing one. Inspect a failed connected operation before retrying or switching transports.
 
@@ -181,7 +187,9 @@ workflow run retained for diagnostics
 
 Artifacts should be as small and short-lived as practical, but do not remove the only exact recovery payload before its result has been consumed or replaced by durable repository state. Workflow runs may retain useful diagnostics; bounded growth matters more than an exact run count. Treat workflow definitions, historical runs, branches/refs, and artifacts as separate lifecycle objects.
 
-Control growth before it becomes a cleanup emergency. Prefer one task branch over a new branch for every retry when the same branch can safely carry the durable task state. Avoid duplicate transport/supply artifacts when an existing artifact is still the intended exact payload; when a newer durable result supersedes an older temporary payload, shorten retention or remove the obsolete copy when safe. During mission-heavy work, periodically inspect the count, size, age, and ownership of task branches, temporary workflows, recent runs, and artifacts. If growth is surprising or ownership is unclear, stop creating more temporary state until the existing state is understood. Respect repository/organization retention, storage, quota, and budget controls when they are observable.
+Control growth before it becomes a cleanup emergency. Prefer one task branch over a new branch for every retry when the same branch can safely carry the durable task state. Avoid duplicate transport/supply artifacts when an existing artifact is still the intended exact payload; when a newer durable result supersedes an older temporary payload, shorten retention or remove the obsolete copy when safe.
+
+During mission-heavy work, periodically audit task branches/refs, temporary workflow definitions, recent mission runs, and artifact storage for count, size, age, ownership, and continuing task or recovery value, so remote state tracks active work rather than forgotten attempts. If growth is surprising or ownership is unclear, stop creating more temporary state until the existing state is understood. Respect repository/organization retention, storage, quota, and budget controls when they are observable.
 
 Prefer existing trusted reusable workflows when they express the mission safely. If a temporary workflow is necessary, use narrow triggers, minimum permissions, task-owned names, isolated temporary state, and remove the definition from final source unless the project deliberately adopts it as maintained infrastructure. If concurrency controls are used, derive their group from task identity so unrelated missions cannot cancel or overwrite one another.
 

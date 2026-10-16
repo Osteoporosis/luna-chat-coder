@@ -118,7 +118,7 @@ The snapshot is a user-owned handoff and recovery aid, not durable repository tr
 
 ## Publish exact changes
 
-Record the expected current head of the branch being updated and recheck it before consequential writes. Keep it distinct from the payload's source commit; if the destination moved, recover and deliberately reconcile the result while preserving concurrent work.
+Record the expected current head of the branch being updated and recheck it before consequential writes. Keep it distinct from the payload's source commit. If the destination moved, recover its current state and deliberately rebase, merge, or recreate the result while preserving concurrent work.
 
 Choose the simplest reliable exact route for the observed payload and host. These are defaults, not a hierarchy:
 
@@ -135,6 +135,17 @@ If the only exact route is model-mediated, use the verified fallback in `referen
 ## Recovery
 
 After a chat reset, sandbox loss, or source-identity ambiguity, read [`references/recovery.md`](references/recovery.md).
+
+Prefer recovery in this order:
+
+```text
+commit / PR head
+    > immutable Git or Actions artifact
+    > surviving sandbox working tree
+    > conversation reconstruction
+```
+
+Use this order to establish exact source while preserving and reconciling newer task-owned work.
 
 Preserve unfamiliar surviving work and mission state until ownership and terminal status are understood.
 

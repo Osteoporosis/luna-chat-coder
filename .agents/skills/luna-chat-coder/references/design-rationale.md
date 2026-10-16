@@ -81,6 +81,12 @@ It is already attached to the conversation, gives the model direct access to the
 
 The policy therefore says **inventory before acquiring**. This does not assume that any particular runtime or tool is preinstalled; it means inspect what is already available before downloading, installing, or dispatching a remote mission.
 
+### Execution recovery follows current capabilities
+
+An invocation failure may be transient or limited to one tool interface. Stopping after one failed alternative can miss a working route, and excluding the original route from a fresh check can mistake a one-off failure for an outage. One bounded recovery pass therefore covers every currently available, permitted route, including the one that failed, and ends early when a route sustains the work. This is capability diagnosis, not permission to replay a command whose start or side effects remain unknown.
+
+Tool names, counts, presentation, and implementations can change across ChatGPT versions and other LLM hosts. Route selection belongs to the model using current capabilities and tool contracts; Luna does not impose a special restriction on a route because it is user-visible. Invocation recovery also does not replace long-running job supervision: a live job, a tool wait window, and an execution limit are different states. The procedure belongs in `sandbox-execution.md`.
+
 ## 5. Why the user's host computer is outside the model
 
 A user's own computer may be a capable development environment, but ordinary web chat should not require access to it.
@@ -214,9 +220,11 @@ In degraded mode, split work into bounded missions, persist reusable progress in
 
 ## 13. Durable handoff and context loss
 
-Chat or sandbox context can disappear unexpectedly. State should become durable when losing it would make recovery expensive or ambiguous.
+Chat or sandbox state can disappear at any point in the engineering loop. Waiting until final handoff or until loss looks expensive leaves ongoing repository work exposed. Frequent exact checkpoints on an appropriate task-owned branch in the origin repository reduce that gap without moving the engineering loop out of the sandbox.
 
-Suitable carriers include:
+An unfinished checkpoint preserves intended repository output and its actual verification status; it does not imply that the task is complete or checks passed. Reusing the task branch keeps recovery discoverable and remote-state growth bounded. Exact publication and concurrency rules apply to these writes just as they do to a final result. A failed synchronization must remain distinguishable from the last successful remote checkpoint.
+
+Other task and recovery evidence can use the existing durable carriers:
 
 ```text
 branch / PR / issue / commit / task-owned artifact
@@ -226,7 +234,7 @@ Cheap reasoning may remain in chat. A failed attempt that leaves useful logs, di
 
 ### User-downloadable snapshots of substantial sandbox repository work
 
-The sandbox has a narrower handoff gap that does not justify promoting every edit to GitHub: a chat model can spend substantial context, generation, editing, and verification effort on repository files that are still present only in the disposable workspace. When the chat host already provides a direct private sandbox-to-user file path, a complete project-root snapshot gives the user possession of that expensive-to-reproduce state at very low conceptual cost.
+Frequent branch checkpoints preserve intended repository output, but the disposable workspace can also contain useful state beyond those commits, including work since the latest synchronization. When the chat host already provides a direct private sandbox-to-user file path, a complete project-root snapshot gives the user possession of that broader working state at very low conceptual cost. The snapshot supplements frequent origin synchronization rather than postponing or replacing it.
 
 The trigger therefore measures accumulated work volume and practical reproduction cost, not semantic importance. A broad formatting pass, mechanical migration, context-sensitive refactor, or documentation rewrite may be expensive to reproduce even when its behavioral meaning is small. Conversely, a tiny critical fix can be easy to recreate. Fixed line-count thresholds are also too literal; several smaller edits can accumulate into substantial work. The trigger follows intended repository output rather than a narrow definition of code: repository documentation counts the same as source, while environment churn, caches, build output, runtime scratch state, and other non-repository output do not create ceremony.
 
@@ -286,7 +294,7 @@ The separation is intentional:
 SKILL.md
     current runtime policy
 
-actions-missions.md / recovery.md
+actions-missions.md / sandbox-execution.md / recovery.md
     operational details loaded when needed
 
 design-rationale.md
@@ -346,7 +354,9 @@ Unless new evidence provides a strong reason to change them:
 
 - ordinary chat remains the development surface;
 - the sandbox remains the primary engineering workspace;
+- execution unavailability is established only after a fresh bounded pass over all currently available, permitted routes, including the initially failed route; a suitable working route ends the pass;
 - GitHub exact state outranks conversational reconstruction;
+- intended repository work is checkpointed frequently to an appropriate task-owned origin branch, including unfinished work with honest verification status;
 - substantial intended repository-file work in a disposable chat sandbox gets a best-effort user-downloadable project-root snapshot when the host already supports direct file handoff; repository documentation counts the same as source, and snapshot failure does not gate publication;
 - the user's host computer is not a dependency;
 - project requirements define the engineering method and project-owned policy;
@@ -387,6 +397,14 @@ Rejected after the `0.1.3` publication experience. Channel fidelity and end-to-e
 ### Blind retries and source edits after remote failure
 
 Rejected. Inspect evidence first; otherwise retries waste compute and can turn infrastructure problems into unnecessary source changes.
+
+### Declaring sandbox failure after a fixed subset of execution routes
+
+Rejected because tool availability changes and a failed route can recover on its next invocation. A fresh finite pass covers the current permitted routes, including the original failure, using minimal probes rather than replaying unresolved work. This does not authorize bypassing a denial or repeatedly cycling without new evidence.
+
+### Saving repository progress only at final handoff
+
+Rejected because the sandbox can disappear before any handoff boundary. Frequent task-branch checkpoints preserve ongoing work; exact preservation and completed verification remain separate claims. Private workspace snapshots retain their supplementary role and broader capture scope.
 
 ### Aggressive immediate cleanup
 

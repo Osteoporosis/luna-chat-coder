@@ -2,7 +2,7 @@
 
 [한국어 README](README.ko.md)
 
-**Version 0.1.7**
+**Version 0.1.8**
 
 Use ordinary ChatGPT Web conversations for real GitHub repository work—without running a local coding agent, opening a tunnel, or giving the chat access to your computer.
 
@@ -12,7 +12,7 @@ ChatGPT already has a sandbox that can run code. The catch is that network restr
 
 - **A useful built-in workspace.** Editing, building, testing, and debugging stay in the chat sandbox whenever it can do the job.
 - **Fewer dead ends.** If the normal path cannot complete a step reliably, Luna can use GitHub for that step instead of giving up or moving the whole workflow elsewhere.
-- **Safer recovery.** If the chat or sandbox disappears, Luna resumes from exact GitHub state rather than trying to recreate code from conversation history.
+- **Safer recovery.** Luna frequently saves work in progress to a task branch in the original GitHub repository, so it can recover the latest checkpoint if the chat or sandbox disappears.
 - **Reliable handoff.** After substantial work on repository files, Luna can give you a complete sandbox workspace snapshot when the chat supports direct file downloads, while still checking the state it publishes before reporting completion.
 
 The point is simple: give the chat a repository and a development task, not a new piece of infrastructure to operate.
@@ -34,7 +34,7 @@ Organization policy may require an administrator to approve the Plugin or GitHub
 
 Luna reads the repository's own instructions and requirements, recovers the exact source it should work from, and uses the chat sandbox for the normal edit/test loop.
 
-If one execution tool fails, Luna first checks another available, permitted way to run commands in the sandbox. A working alternative keeps development there; it is not a guaranteed fix.
+If an execution tool fails to run a command, Luna makes one fresh check of every currently available, permitted execution route, including the failed one, before treating sandbox execution as unavailable. It resumes work as soon as a suitable route works.
 
 When direct sandbox access is not enough, Luna can use the connected GitHub path for the missing step. If that path still cannot complete the step reliably, a bounded GitHub Actions run can handle it, then return the work to the sandbox when possible. GitHub Actions is not the default coding environment.
 

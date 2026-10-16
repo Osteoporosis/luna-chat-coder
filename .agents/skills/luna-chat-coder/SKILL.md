@@ -4,8 +4,8 @@ description: Keep repository development reliable from chat by using the sandbox
 license: MIT
 compatibility: Requires access to durable repository state. The fully specified ChatGPT Web path requires both the GitHub Plugin and the ChatGPT Codex Connector GitHub App for the target repository. GitHub Actions access is required only when an Actions mission is needed. Other Agent Skills hosts may use the core policy only to the extent that equivalent capabilities actually exist.
 metadata:
-  version: "0.1.7"
-  luna-upstream-version: "0.1.7"
+  version: "0.1.8"
+  luna-upstream-version: "0.1.8"
   luna-upstream-repository: "https://github.com/Osteoporosis/luna-chat-coder"
   luna-upstream-skill: "https://github.com/Osteoporosis/luna-chat-coder/blob/main/.agents/skills/luna-chat-coder/SKILL.md"
 ---
@@ -35,7 +35,7 @@ Do not use `local container`, `local environment`, or `bridge` for these concept
 4. **Inventory before acquiring.** Inspect capabilities already present in the sandbox before installing, downloading, or dispatching a mission.
 5. **The repository defines the engineering method.** Infer required runtimes, services, databases, browsers, compilers, test tools, and versions from repository declarations and task requirements. Do not introduce substitutes or a new methodology on Luna's behalf.
 6. **GitHub holds exact durable truth.** Chat is useful for intent; conversation reconstruction is not a substitute for exact source when durable source exists. Keep observed repository facts distinct from material assumptions.
-7. **Durable handoff is task-owned.** Use a branch, PR, issue, commit, or task-owned artifact when losing state would make recovery expensive or ambiguous; keep cheap intermediate reasoning in chat.
+7. **Durable progress is task-owned.** Frequently checkpoint intended repository changes to an appropriate task branch in the origin repository. Preserve exact recovery state and actual verification status throughout the task, not only at final handoff; keep cheap intermediate reasoning in chat.
 8. **Assume concurrent actors.** Other chats, agents, CI, or humans may create or move branches, refs, commits, workflows, and artifacts while this task is active. Resolve mutable names to current immutable identity before writes, publication, or cleanup; preserve unfamiliar state and never infer ownership from age or naming alone.
 9. **Choose the simplest reliable exact path.** Select transport using exactness, payload semantics, integration limits, round trips, and observed reliability. Model-visible text is useful for semantic text; prefer byte-preserving paths for opaque bytes when practical. Transport policy must not alter or suppress repository content.
 10. **Verify mission results; diagnose before retrying.** Inspect a mission's returned state and expected outputs before relying on them, even when the run reports success. Diagnose failures from logs/results before changing source or repeating an operation; do not guess a root cause from status alone.
@@ -78,7 +78,7 @@ Do not silently weaken verification because setup is inconvenient. If the reposi
 
 ### Execution-tool failures and long-running commands
 
-One execution interface failing does not establish that the sandbox is unavailable. For an invocation error such as `ClientError`, use [`references/sandbox-execution.md`](references/sandbox-execution.md) to check an available, permitted alternative before declaring sandbox failure. If it works, verify workspace/source identity and continue there. For timeouts or long-running commands, follow that reference's surviving-job and supervision guidance. Bound probes, preserve unresolved work, and never route around an explicit safety or permission denial. Project restrictions still govern remote fallback.
+One execution interface failing does not establish that the sandbox is unavailable. For an invocation failure, follow [`references/sandbox-execution.md`](references/sandbox-execution.md): make one fresh pass across all currently available, permitted execution routes, including the failed route, before declaring execution unavailable. Stop the pass as soon as a route sustains the required work, verify workspace/source identity and surviving jobs, and continue there. Follow the same reference for timeouts and long-running supervision. Bound probes, preserve unresolved work, and never bypass an explicit safety or permission denial. Project restrictions still govern remote fallback.
 
 ## Use Actions missions when they reduce real risk or cost
 
@@ -93,6 +93,14 @@ Replacing the sandbox repository engineering loop with remote edit/build/test/de
 Degraded remote mode is a fallback, not the preferred environment. Tell the user in the next meaningful user-visible update or final report that sandbox execution was unavailable or insufficient and that the work continued through GitHub Actions. Do not speculate about billing. If an operation would require an explicitly paid or materially costly resource beyond ordinary configured Actions use, obtain the user's approval before creating that cost.
 
 Read [`references/actions-missions.md`](references/actions-missions.md) before dispatching an Actions mission.
+
+## Checkpoint in-progress repository work
+
+Assume the sandbox can disappear at any time. While editing, frequently synchronize intended repository output to an appropriate task-owned branch in the origin repository, following [Publish exact changes](#publish-exact-changes). Checkpoint after coherent changes and before lengthy or risky operations, context transitions, or handoff when work remains unsynchronized. Do not wait for task completion or all checks to pass: unfinished work can be a recovery checkpoint, with pending work and actual verification status recorded in its commit message or task-owned record.
+
+Reuse the task branch rather than creating one per checkpoint. Resolve its current head before each write, preserve concurrent work, and verify the resulting remote commit/tree matches the intended checkpoint. A successful checkpoint proves exact preservation, not task completion or passing checks.
+
+If origin synchronization is blocked, preserve an exact payload through another authorized durable path when available and report what remains unsynchronized. A sandbox-only commit or downloadable snapshot does not establish origin synchronization. Checkpoints contain intended repository output; the supplementary snapshot below captures the whole workspace.
 
 ## Preserve substantial sandbox repository work for user handoff
 

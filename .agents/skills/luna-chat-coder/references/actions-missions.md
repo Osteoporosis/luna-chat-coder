@@ -118,6 +118,8 @@ Use a Git bundle when Git objects or history matter. Use an archive for a comple
 
 Enter degraded remote mode only when the sandbox work container itself is unavailable or cannot sustain the requested execution because of a hard platform constraint such as usage, duration, resource, or execution limits. Missing direct GitHub network access, missing downloadable bytes, or an initially absent tool/runtime should first be treated as something transport or supply may restore to the sandbox when practical; those conditions alone do not establish degraded remote mode.
 
+For invocation failures or timeouts, first follow [sandbox-execution.md](sandbox-execution.md). A single failed interface does not establish sandbox unavailability; complete the applicable recovery pass and supervision checks before choosing remote execution.
+
 In this mode, continue through a sequence of bounded missions rather than pretending the runner is a persistent interactive workstation:
 
 1. establish or recover the exact durable repository base;

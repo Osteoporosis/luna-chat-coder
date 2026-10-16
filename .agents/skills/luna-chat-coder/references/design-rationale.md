@@ -108,7 +108,7 @@ commit / PR head
     > conversation reconstruction
 ```
 
-Branch and tag names are coordination names, not immutable identity. Consequential transport, publication, and cleanup should bind to resolved commits or equivalent immutable identity.
+This preference establishes a recovery baseline; later task-owned work still needs to be preserved and reconciled. Branch and tag names are coordination names, not immutable identity. Consequential transport, publication, and cleanup should bind to resolved commits or equivalent immutable identity.
 
 Observed repository facts must remain distinct from assumptions. When source, documentation, history, and conversation disagree, investigate rather than choosing whichever is convenient.
 
@@ -118,13 +118,13 @@ Another actor may change repository state at any time: another chat, another age
 
 Therefore Luna:
 
-- resolves mutable names before consequential writes or cleanup;
+- rechecks the current destination ref before consequential writes or cleanup;
 - does not infer ownership from branch names, age, or ancestry alone;
 - preserves unfamiliar state until ownership is understood;
 - uses task-owned namespaces when independent work can overlap;
 - uses commit SHAs and payload checksums for identity while names coordinate ownership.
 
-This is core policy because preventing a collision is cheaper than recovering from one.
+The payload's source commit identifies the starting state of the change; the destination ref's current head reveals concurrent work where the result will be published. Keeping these distinct avoids confusing source verification with publication checks. This is core policy because preventing a collision is cheaper than recovering from one.
 
 ## 8. Why Actions is modeled as a mission
 
@@ -462,9 +462,9 @@ Treat every proposed Luna change as a hypothesis about how to improve the system
 
 Discussion and implementation are one iterative design loop: understand the current behavior, make the change the design requires, verify what actually improved or regressed, and keep refining only while evidence supports the direction. Diff size is not a maintenance objective. Canonical Luna may be rewritten or refactored aggressively when that produces a clearer, more coherent policy.
 
-This freedom applies only to maintaining Luna itself. It does not impose a rewrite preference on downstream projects, and it does not justify a larger runtime skill: the copied skill should remain compact, readable, and easy for weaker models to execute reliably. Runtime rules that bound an Actions mission constrain remote side effects, not maintenance diff size.
+This freedom applies only to maintaining Luna itself and does not impose a rewrite preference on downstream projects. Keep the copied skill compact and clear for models with different capabilities, including weaker models. Prefer simple rules and reasonable model judgment over exhaustive edge cases or assumptions about today's tools. Accept modest tradeoffs when extra detail would make the policy harder to follow. Runtime rules that bound an Actions mission constrain remote side effects, not maintenance diff size.
 
-Before accepting a change, compare the final candidate with the prior baseline. Consider the intended failure mode, runtime complexity, normal-path user noise, portability, security boundaries, exactness/recovery behavior, and the checks that actually ran. Solving one edge case while making the healthy path more fragile or ceremonial is not progress.
+Before accepting a change, compare the complete final policy with the prior baseline through logical review. Consider the intended failure mode, runtime complexity, normal-path user noise, portability, security boundaries, exactness/recovery behavior, and the checks that actually ran. Actual observations can supplement this review; checks tied to one model or host do not establish behavior across other or future environments. Solving one edge case while making the healthy path more fragile or ceremonial is not progress.
 
 If the candidate is worse, ambiguous, or needlessly complex, simplify it, revert the affected part, or withdraw it. Reversibility is a maintenance feature; the goal is the best resulting policy, not preservation of the current draft.
 

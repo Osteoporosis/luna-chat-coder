@@ -30,7 +30,7 @@ Do not use `local container`, `local environment`, or `bridge` for these concept
 ## Core invariants
 
 1. **Discover early, activate late.** Load this policy before repository work, but do not use Actions merely because the skill is present.
-2. **Materialize exact source before editing.** When a target GitHub repository is given, resolve the intended commit or PR-head SHA and establish a complete working tree for that exact state inside the sandbox before source edits, builds, tests, or iterative debugging. Inspect surviving sandbox work before replacing it. Prefer normal Git clone/fetch/checkout when the sandbox can reach the repository; otherwise use another exact repository read/archive transport that preserves the required files and identity. Verify the materialized state corresponds to the expected SHA before modifying it.
+2. **Materialize exact source before editing.** Resolve the intended commit or PR-head SHA and establish a complete working tree for that exact state before source edits, builds, tests, or iterative debugging. Use the sandbox normally; in degraded remote mode, establish the same exact source on the runner. Inspect surviving work before replacing it, and verify source identity before modifying it.
 3. **Sandbox first.** Prefer the sandbox work container for source inspection, editing, building, testing, linting, formatting, running services, and iterative debugging once the exact target source has been materialized there.
 4. **Inventory before acquiring.** Inspect capabilities already present in the sandbox before installing, downloading, or dispatching a mission.
 5. **The repository defines the engineering method.** Infer required runtimes, services, databases, browsers, compilers, test tools, and versions from repository declarations and task requirements. Do not introduce substitutes or a new methodology on Luna's behalf.
@@ -55,20 +55,18 @@ Read only the fixed public upstream `SKILL.md`, preferably just its frontmatter,
 
 Before repository work, perform the smallest useful preflight without making the user operate a checklist:
 
-1. identify the repository, task/PR if any, and expected commit SHA when available;
-2. inspect any surviving sandbox workspace before replacing or merging it;
-3. resolve the intended mutable branch/PR name to its current immutable commit SHA;
-4. materialize that exact repository state as a complete sandbox working tree and verify it matches the expected SHA before editing;
-5. read the repository declarations needed to understand runtime, dependency, service, build, and test requirements;
-6. inventory the sandbox capabilities already available;
-7. determine which connected repository read/write and Git object operations are available;
-8. determine whether Actions/workflow/log/artifact operations are available if a fallback later becomes necessary.
+1. identify the repository and task/PR if any, and resolve the intended source to an exact commit SHA;
+2. inspect surviving work before replacing or merging it, then establish the working tree under the exact-source invariant above;
+3. read the repository declarations needed to understand runtime, dependency, service, build, and test requirements;
+4. inventory the sandbox capabilities already available;
+5. determine which connected repository read/write and Git object operations are available;
+6. determine whether Actions/workflow/log/artifact operations are available if a fallback later becomes necessary.
 
 When the normal path is healthy, do not narrate this preflight to the user.
 
 ## Work in the sandbox first
 
-Treat the sandbox work container as a disposable development workstation. For a repository task, first recover or materialize the exact target commit/PR-head source into a complete working tree there, verify its identity, and only then perform source edits or the engineering loop. A handful of repository API reads is not a substitute for establishing the working tree when the task requires editing, building, testing, or inspecting repository-wide behavior.
+Treat the sandbox work container as a disposable development workstation and follow the exact-source invariant above. A handful of repository API reads is not a substitute for a complete working tree when editing, building, testing, or inspecting repository-wide behavior.
 
 When ordinary Git network access is available, clone/fetch and check out the resolved target state. If the sandbox cannot reach GitHub directly, use a connected repository path or bounded transport mission to deliver an exact checkout, archive, Git bundle, checksummed artifact payload, or equivalent source payload into the sandbox. When repository size or payload shape makes per-file reconstruction materially riskier or more expensive, prefer that byte-preserving transfer over rebuilding the tree through model-authored file or blob content. The source-transfer step may run remotely; the normal edit/build/test/debug loop should return to or remain in the sandbox. If no exact source path can establish the required working tree, treat that as a transport/capability problem rather than editing an incomplete reconstruction.
 
@@ -120,7 +118,7 @@ The snapshot is a user-owned handoff and recovery aid, not durable repository tr
 
 ## Publish exact changes
 
-Capture the expected base SHA before publication and re-resolve it before consequential writes. If the base moved, recover and deliberately rebase, merge, or recreate the result.
+Record the expected current head of the branch being updated and recheck it before consequential writes. Keep it distinct from the payload's source commit; if the destination moved, recover and deliberately reconcile the result while preserving concurrent work.
 
 Choose the simplest reliable exact route for the observed payload and host. These are defaults, not a hierarchy:
 
@@ -137,15 +135,6 @@ If the only exact route is model-mediated, use the verified fallback in `referen
 ## Recovery
 
 After a chat reset, sandbox loss, or source-identity ambiguity, read [`references/recovery.md`](references/recovery.md).
-
-Prefer recovery in this order:
-
-```text
-commit / PR head
-    > immutable Git or Actions artifact
-    > surviving sandbox working tree
-    > conversation reconstruction
-```
 
 Preserve unfamiliar surviving work and mission state until ownership and terminal status are understood.
 

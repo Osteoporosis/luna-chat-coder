@@ -11,7 +11,7 @@ commit / PR head
     > conversation reconstruction
 ```
 
-Chat preserves intent and explanations. Durable repository state preserves exact source bytes.
+Use this order to establish exact source while preserving and reconciling newer task-owned work. Chat preserves intent and explanations; durable repository state preserves exact source bytes.
 
 ## Procedure
 
@@ -27,9 +27,9 @@ Chat preserves intent and explanations. Durable repository state preserves exact
 
 ## Drift
 
-Branch and tag names are coordination names and can move. Before applying a payload, publishing a commit, or performing a destructive operation, compare the expected immutable identity with the actual base.
+Branch and tag names can move. Verify the payload's source commit before applying it, and follow [Publish exact changes](../SKILL.md#publish-exact-changes) when updating its destination.
 
-If the base moved, recover the new state and deliberately rebase, merge, or recreate the payload.
+If the source or destination differs from the expected state, recover and deliberately rebase, merge, or recreate the payload.
 
 ## Parallel work and lost context
 

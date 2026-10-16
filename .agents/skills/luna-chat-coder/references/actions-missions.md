@@ -66,6 +66,8 @@ Choose the simplest reliable exact path using payload semantics, integration lim
 - use an exact plain-text Git patch for larger semantic-text changes when text transport is practical;
 - prefer a Git object, bundle, archive, artifact, or file reference for opaque, binary, or filesystem-sensitive state.
 
+Follow the publication rules in [`SKILL.md`](../SKILL.md#publish-exact-changes).
+
 Treat transport capabilities as directional. A repository read or downloadable artifact does not imply a sandbox-to-runner or upload path; discover the actual capability rather than inventing one. Inspect a failed connected operation before retrying or switching transports.
 
 Do not encode existing bytes as Base64 or another opaque text representation merely to move them through model-visible text. This rule concerns Luna-introduced transport representation, not project content: opaque-looking repository or task data must still be preserved and handled faithfully. Encoding performed inside a tool after the model supplies semantic text or a file/reference is outside this rule.
@@ -104,9 +106,9 @@ Use a model-visible patch when its changed content is semantic text. `GIT binary
 
 When a semantic-text patch must cross a model-visible channel:
 
-1. record the expected base SHA, patch checksum, and expected result tree;
+1. record the payload's source commit, patch checksum, and expected result tree;
 2. transfer the patch as task-owned data, using deterministic chunks only when required by limits;
-3. verify the reassembled checksum and confirm remote `HEAD` still equals the expected base;
+3. verify the reassembled checksum and confirm the receiving checkout's `HEAD` equals the payload's source commit;
 4. run `git apply --check --index` and `git apply --index`, then verify `git write-tree` equals the expected result tree;
 5. publish the clean result and verify the committed tree still equals the expected result tree.
 
@@ -169,9 +171,9 @@ Names coordinate ownership; immutable identity still comes from commit SHAs and 
 
 ## Durable lifecycle and cleanup
 
-Cleanup must remain safe even if the chat, sandbox, or conversational context disappears unexpectedly. Do not rely on conversation memory as the only record of remote-state ownership.
+Base cleanup on durable GitHub evidence of task ownership and terminal state, including after context loss. Preserve unfamiliar state; conversation memory alone is insufficient.
 
-A task branch or other mission-owned object should remain while it still has active publication, PR review, debugging, handoff, or recovery value. After merge or deliberate abandonment, remove it when task ownership and terminal state are clear. Do not delete an unfamiliar branch or mission object merely because it is old, and do not use ancestry alone as proof that cleanup is safe.
+A task branch or other mission-owned object should remain while it still has active publication, PR review, debugging, handoff, or recovery value. After merge, deliberate abandonment, or replacement by a better durable path, remove it when task ownership and terminal state are clear and no such value remains. Do not delete an unfamiliar branch or mission object merely because it is old, and do not use ancestry alone as proof that cleanup is safe.
 
 After successful transfer, publication, deliberate abandonment, or replacement, inspect the task-owned temporary state:
 
@@ -185,11 +187,9 @@ workflow run retained for diagnostics
 
 Artifacts should be as small and short-lived as practical, but do not remove the only exact recovery payload before its result has been consumed or replaced by durable repository state. Workflow runs may retain useful diagnostics; bounded growth matters more than an exact run count. Treat workflow definitions, historical runs, branches/refs, and artifacts as separate lifecycle objects.
 
-Control growth before it becomes a cleanup emergency. Prefer one task branch over a new branch for every retry when the same branch can safely carry the durable task state. Avoid duplicate transport/supply artifacts when an existing artifact is still the intended exact payload; when a newer durable result supersedes an older temporary payload, shorten retention or remove the obsolete copy when safe. During mission-heavy work, periodically inspect the count, size, age, and ownership of task branches, temporary workflows, recent runs, and artifacts. If growth is surprising or ownership is unclear, stop creating more temporary state until the existing state is understood. Respect repository/organization retention, storage, quota, and budget controls when they are observable.
+Control growth before it becomes a cleanup emergency. Prefer one task branch over a new branch for every retry when the same branch can safely carry the durable task state. Avoid duplicate transport/supply artifacts when an existing artifact is still the intended exact payload; when a newer durable result supersedes an older temporary payload, shorten retention or remove the obsolete copy when safe.
 
-Keep a failed mission while it has debugging or recovery value. When a better durable path supersedes it, remove its task-owned temporary objects when safe. During mission-heavy work, occasionally audit task branches/refs, temporary workflow definitions, recent mission runs, and artifact storage so remote state tracks active work rather than forgotten attempts.
-
-If context is lost, reconstruct ownership and terminal state from durable GitHub evidence before cleanup. Preserve anything unfamiliar until that reconstruction is sufficient.
+During mission-heavy work, periodically audit task branches/refs, temporary workflow definitions, recent mission runs, and artifact storage for count, size, age, ownership, and continuing task or recovery value, so remote state tracks active work rather than forgotten attempts. If growth is surprising or ownership is unclear, stop creating more temporary state until the existing state is understood. Respect repository/organization retention, storage, quota, and budget controls when they are observable.
 
 Prefer existing trusted reusable workflows when they express the mission safely. If a temporary workflow is necessary, use narrow triggers, minimum permissions, task-owned names, isolated temporary state, and remove the definition from final source unless the project deliberately adopts it as maintained infrastructure. If concurrency controls are used, derive their group from task identity so unrelated missions cannot cancel or overwrite one another.
 

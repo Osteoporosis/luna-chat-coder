@@ -56,7 +56,7 @@ Read only the fixed public upstream `SKILL.md`, preferably just its frontmatter,
 Before repository work, perform the smallest useful preflight without making the user operate a checklist:
 
 1. identify the repository and task/PR if any, and resolve the intended source to an exact commit SHA;
-2. inspect surviving work before replacing or merging it, then establish the working tree under the exact-source invariant above;
+2. inspect surviving work before replacing or merging it, then materialize and verify the exact source as a complete working tree in the current chat's sandbox work container before editing; use an Actions runner for the engineering loop only in degraded remote mode;
 3. read the repository declarations needed to understand runtime, dependency, service, build, and test requirements;
 4. inventory the sandbox capabilities already available;
 5. determine which connected repository read/write and Git object operations are available;
@@ -122,7 +122,7 @@ Record the expected current head of the branch being updated and recheck it befo
 
 Choose the simplest reliable exact route for the observed payload and host. These are defaults, not a hierarchy:
 
-- use connected file operations for small, isolated text edits;
+- use connected file operations to publish small, isolated text changes already prepared in the working tree;
 - for a larger verified semantic-text change, prefer an exact plain-text Git patch over re-emitting complete files when model-visible text is the practical route;
 - prefer Git objects, bundles, archives, artifacts, or file references for opaque, binary, or filesystem-sensitive state.
 

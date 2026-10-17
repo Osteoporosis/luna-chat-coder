@@ -62,7 +62,7 @@ Transport may bring exact source into the sandbox or publish an exact sandbox re
 
 Choose the simplest reliable exact path using payload semantics, integration limits, round trips, and observed reliability. The following are defaults, not a hierarchy:
 
-- use direct file writes for small, isolated text edits;
+- use direct file writes to publish small, isolated text changes already prepared in the working tree;
 - use an exact plain-text Git patch for larger semantic-text changes when text transport is practical;
 - prefer a Git object, bundle, archive, artifact, or file reference for opaque, binary, or filesystem-sensitive state.
 

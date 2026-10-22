@@ -168,6 +168,8 @@ Transport is bidirectional. Connected file operations, Git objects, archives, ar
 
 Exactness and opacity are separate properties. **Exact bytes** means byte identity is preserved; it does not mean the representation is binary, encoded, or unreadable. A semantic-text patch can be exact. Conversely, an encoded payload can be opaque to the model even when it is exact.
 
+Payload integrity alone does not prove that application or publication produced the intended tree: for example, a partial archive can preserve every included byte while leaving files that should have been deleted. Reusing verified outputs after a partial failure also avoids unnecessary reserialization when the same route remains appropriate.
+
 Model-mediated reconstruction is generative rather than byte-preserving. Sampling can select different tokens according to decoding settings such as temperature; generation-time text-watermarking schemes, when present, intentionally bias token selection. Either can change bytes without changing the intended meaning. Exact transport therefore relies on transferred bytes plus integrity checks, not faithful-looking model regeneration.
 
 ### Model-visible transport and safety classifiers
@@ -347,6 +349,8 @@ Canonical runtime terminology stays deliberately narrow:
 Avoid `local container` because users may interpret “local” as their own computer. Avoid `bridge` because it implies a persistent connection rather than bounded remote work.
 
 Human-facing README prose should use these terms sparingly. Runtime documents can be precise without making the public introduction sound like a protocol specification.
+
+Prefer familiar engineering transliterations in Korean documentation; terms may remain in English when literal translation would be longer or ambiguous.
 
 ## 21. Stable decisions worth preserving
 

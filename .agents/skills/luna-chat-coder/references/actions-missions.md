@@ -116,6 +116,8 @@ A checksum, result-tree, or publication mismatch is a transport failure until ev
 
 Use a Git bundle when Git objects or history matter. Use an archive for a complete source or supply payload when history does not matter. Do not reconstruct a substantial verified result from prose when an exact payload exists.
 
+Before applying a partial archive to the working tree, inspect it in a separate directory and verify its target paths, checksums, and required replacements and deletions.
+
 ## Degraded remote mode
 
 Enter degraded remote mode only when the sandbox work container itself is unavailable or cannot sustain the requested execution because of a hard platform constraint such as usage, duration, resource, or execution limits. Missing direct GitHub network access, missing downloadable bytes, or an initially absent tool/runtime should first be treated as something transport or supply may restore to the sandbox when practical; those conditions alone do not establish degraded remote mode.

@@ -2,7 +2,7 @@
 
 [한국어 README](README.ko.md)
 
-**Version 0.1.8**
+**Version 1.0.0**
 
 Use ordinary ChatGPT Web conversations for real GitHub repository work—without running a local coding agent, opening a tunnel, or giving the chat access to your computer.
 
@@ -30,13 +30,15 @@ That is the normal workflow. A repository created from this template already con
 
 Organization policy may require an administrator to approve the Plugin or GitHub App.
 
+Using GitHub Actions also requires the connected tools to support the workflow execution and result access needed for that step.
+
 ## How it works
 
 Luna reads the repository's own instructions and requirements, recovers the exact source it should work from, and uses the chat sandbox for the normal edit/test loop.
 
 An execution-tool failure triggers recovery through the available, permitted routes before Luna gives up on the sandbox.
 
-When direct sandbox access is not enough, Luna can use the connected GitHub path for the missing step. If that path still cannot complete the step reliably, a bounded GitHub Actions run can handle it, then return the work to the sandbox when possible. GitHub Actions is not the default coding environment.
+When direct sandbox access is not enough, Luna can use the connected GitHub path for the missing step. If that path still cannot complete the step reliably, a bounded GitHub Actions run can handle it, then return the work to the sandbox when possible. Luna can also choose Actions when it offers safer or more efficient transport for required inputs or prepared changes. GitHub Actions is not the default coding environment.
 
 ## Add Luna to an existing repository
 

@@ -4,8 +4,8 @@ description: Keep repository development reliable from chat by using the sandbox
 license: MIT
 compatibility: Requires access to durable repository state. The fully specified ChatGPT Web path requires both the GitHub Plugin and the ChatGPT Codex Connector GitHub App for the target repository. GitHub Actions access is required only when an Actions mission is needed. Other Agent Skills hosts may use the core policy only to the extent that equivalent capabilities actually exist.
 metadata:
-  version: "0.1.8"
-  luna-upstream-version: "0.1.8"
+  version: "1.0.0"
+  luna-upstream-version: "1.0.0"
   luna-upstream-repository: "https://github.com/Osteoporosis/luna-chat-coder"
   luna-upstream-skill: "https://github.com/Osteoporosis/luna-chat-coder/blob/main/.agents/skills/luna-chat-coder/SKILL.md"
 ---
@@ -128,7 +128,11 @@ Choose the simplest reliable exact route for the observed payload and host. Thes
 
 Avoid Luna-introduced transport-only opaque encodings such as Base64 of existing bytes when the model does not need to interpret them. This is not a content filter: encoded or high-entropy data that belongs to the repository or task must be preserved and handled faithfully.
 
+Verify the applied and published Git tree or contents against the intended result, regardless of the transport route.
+
 Treat a mismatch between the verified sandbox result and published Git state as a transport/publication failure until evidence shows otherwise. Preserve the verified sandbox result and inspect the serialization or transport path before changing source.
+
+If the publication route remains appropriate, reuse verified outputs and retry only the failed payloads when safe.
 
 If the only exact route is model-mediated, use the verified fallback in `references/actions-missions.md` rather than reconstructing the result from prose.
 
